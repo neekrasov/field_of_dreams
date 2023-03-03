@@ -1,7 +1,7 @@
 from typing import Dict
 
 from field_of_dreams.domain.entities.user import User, UserID
-from field_of_dreams.application.protocols.user import UserGateway
+from field_of_dreams.application.protocols.gateways.user import UserGateway
 from field_of_dreams.application.common import GatewayError
 
 

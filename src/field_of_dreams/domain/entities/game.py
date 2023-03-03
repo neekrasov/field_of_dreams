@@ -8,6 +8,7 @@ from .chat import ChatID
 from .word import WordID
 
 if TYPE_CHECKING:
+    from .player import PlayerID
     from .player_turn import PlayerTurnID
 
 GameID = NewType("GameID", uuid.UUID)
@@ -24,6 +25,7 @@ class Game:
     chat_id: ChatID
     word_id: WordID
     interval: timedelta
+    author: "PlayerID"
     current_turn_id: Optional["PlayerTurnID"] = None
 
     game_status: GameStatus = GameStatus.PREPARING
@@ -32,6 +34,9 @@ class Game:
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     id: Optional[GameID] = None
+
+    def set_status(self, game_status: GameStatus):
+        self.game_status = game_status
 
     @property
     def is_active(self) -> bool:

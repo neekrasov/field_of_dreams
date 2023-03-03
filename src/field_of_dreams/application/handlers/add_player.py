@@ -4,9 +4,9 @@ from field_of_dreams.domain.entities.user import UserID, User
 from field_of_dreams.domain.entities.player import Player
 from field_of_dreams.domain.entities.chat import ChatID
 from ..common import Handler, UnitOfWork, ApplicationException, GatewayError
-from ..protocols.player import PlayerGateway
-from ..protocols.user import UserGateway
-from ..protocols.game import GameGateway
+from ..protocols.gateways.player import PlayerGateway
+from ..protocols.gateways.user import UserGateway
+from ..protocols.gateways.game import GameGateway
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,7 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
             except GatewayError:
                 pass
 
-            game = await self._game_gateway.get_current_chat_game(
+            game = await self._game_gateway.get_current_game(
                 command.chat_id
             )
             if not game:

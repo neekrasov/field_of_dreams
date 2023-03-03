@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from field_of_dreams.domain.entities.chat import ChatID, Chat
 from ..common import Handler, UnitOfWork, GatewayError
-from ..protocols.chat import ChatGateway
+from ..protocols.gateways.chat import ChatGateway
 
 
 @dataclass(frozen=True)

@@ -3,13 +3,15 @@ from datetime import timedelta
 
 from field_of_dreams.domain.entities.game import Game
 from field_of_dreams.domain.entities.chat import ChatID
+from field_of_dreams.domain.entities.player import PlayerID
 from ..common import Handler, UnitOfWork, ApplicationException
-from ..protocols.game import GameGateway
-from ..protocols.word import WordGateway
+from ..protocols.gateways.game import GameGateway
+from ..protocols.gateways.word import WordGateway
 
 
 @dataclass(frozen=True)
 class CreateGameCommand:
+    author_id: PlayerID
     chat_id: ChatID
     max_turn_time: timedelta
 
@@ -28,7 +30,10 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
     async def execute(self, command: CreateGameCommand) -> None:
         async with self._uow.pipeline:
             word = await self._word_gateway.get_random_word()
-            exists = await self._game_gateway.get_current_chat_game(
+            if word is None:
+                raise ApplicationException("No words available")
+
+            exists = await self._game_gateway.get_current_game(
                 command.chat_id
             )
             if exists:  # TODO: Ошибка должны отображаться во вью
@@ -40,6 +45,7 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
                     command.chat_id,
                     word.id,  # type: ignore
                     command.max_turn_time,
+                    command.author_id,
                 )
             )
             await self._uow.commit()

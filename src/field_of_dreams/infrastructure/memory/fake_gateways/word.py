@@ -2,7 +2,7 @@ import random
 from typing import Dict
 
 from field_of_dreams.domain.entities.word import Word, WordID
-from field_of_dreams.application.protocols.word import WordGateway
+from field_of_dreams.application.protocols.gateways.word import WordGateway
 
 
 class InMemoryWordGateway(WordGateway):

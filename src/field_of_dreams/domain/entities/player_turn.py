@@ -16,7 +16,7 @@ class TurnState(enum.Enum):
 
 @dataclass
 class PlayerTurn:
+    player_id: PlayerID
     id: Optional[PlayerTurnID] = None
-    player_id: Optional[PlayerID] = None
     start_time: Optional[datetime] = None
     state: TurnState = TurnState.IN_PROGRESS

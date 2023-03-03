@@ -1,15 +1,19 @@
 import pytest
-from typing import Dict
+from typing import Dict, List
 
 from field_of_dreams.domain.entities.user import User, UserID
 from field_of_dreams.domain.entities.game import Game, GameID
 from field_of_dreams.domain.entities.chat import Chat, ChatID
 from field_of_dreams.domain.entities.player import Player, PlayerID
-from field_of_dreams.application.protocols.game import GameGateway
-from field_of_dreams.application.protocols.word import WordGateway
-from field_of_dreams.application.protocols.player import PlayerGateway
-from field_of_dreams.application.protocols.user import UserGateway
-from field_of_dreams.application.protocols.chat import ChatGateway
+from field_of_dreams.application.protocols.gateways.game import GameGateway
+from field_of_dreams.application.protocols.gateways.word import WordGateway
+from field_of_dreams.application.protocols.gateways.player import PlayerGateway
+from field_of_dreams.application.protocols.gateways.user import UserGateway
+from field_of_dreams.application.protocols.gateways.chat import ChatGateway
+from field_of_dreams.application.protocols.gateways.player_turn import (
+    PlayerTurnGateway,
+)
+from field_of_dreams.application.protocols.views.game import GameView
 from field_of_dreams.application.common import (
     UnitOfWork,
     ApplicationException,
@@ -26,6 +30,10 @@ from field_of_dreams.application.handlers.join_chat import (
     JoinToChatHandler,
     JoinToChatCommand,
 )
+from field_of_dreams.application.handlers.start_game import (
+    StartGameHandler,
+    StartGameCommand,
+)
 
 
 class TestCreateGameHandler:
@@ -37,10 +45,13 @@ class TestCreateGameHandler:
         fake_uow: UnitOfWork,
         fake_chats: Dict[ChatID, Chat],
         fake_games: Dict[GameID, Game],
+        fake_players_ids: List[PlayerID],
     ):
         count_games = len(fake_games)
         await CreateGameHandler(game_gateway, word_gateway, fake_uow).execute(
-            CreateGameCommand(list(fake_chats.keys())[0], 15)
+            CreateGameCommand(
+                fake_players_ids[0], list(fake_chats.keys())[0], 15
+            )
         )
 
         assert len(fake_games) == count_games + 1
@@ -53,11 +64,16 @@ class TestCreateGameHandler:
         fake_uow: UnitOfWork,
         fake_chats: Dict[ChatID, Chat],
         fake_games: Dict[GameID, Game],
+        fake_players_ids: List[PlayerID],
     ):
         with pytest.raises(ApplicationException):
             await CreateGameHandler(
                 game_gateway, word_gateway, fake_uow
-            ).execute(CreateGameCommand(list(fake_chats.keys())[1], 15))
+            ).execute(
+                CreateGameCommand(
+                    fake_players_ids[0], list(fake_chats.keys())[1], 15
+                ),
+            )
 
 
 class TestAddPlayerHandler:
@@ -94,7 +110,7 @@ class TestAddPlayerHandler:
     ):
         old_users_count = len(fake_users)
         old_players_count = len(fake_players)
-        exists_user = list(fake_users.values())[1]
+        exists_user = list(fake_users.values())[2]
 
         await AddPlayerHandler(
             player_gateway, user_gateway, game_gateway, fake_uow
@@ -182,3 +198,55 @@ class TestJoinToChatHandler:
         )
 
         assert len(fake_chats) == old_chats_count
+
+
+class TestStartGameHandler:
+    @pytest.mark.asyncio
+    async def test_start_game(
+        self,
+        player_turn_gateway: PlayerTurnGateway,
+        game_view: GameView,
+        fake_uow: UnitOfWork,
+        player_gateway: PlayerGateway,
+        game_gateway: GameGateway,
+        fake_chats: Dict[ChatID, Chat],
+        fake_games: Dict[GameID, Game],
+    ):
+        game = list(fake_games.values())[1]
+        await player_gateway.add_player(
+            Player(
+                game.id,
+                123,
+            )
+        )
+        await StartGameHandler(
+            game_gateway,
+            player_turn_gateway,
+            player_gateway,
+            game_view,
+            fake_uow,
+        ).execute(StartGameCommand(list(fake_chats.keys())[1]))
+
+        assert game_view.count_events == 2
+        assert game.is_active is True
+
+    @pytest.mark.asyncio
+    async def test_start_game_few_players(
+        self,
+        player_turn_gateway: PlayerTurnGateway,
+        game_view: GameView,
+        fake_uow: UnitOfWork,
+        player_gateway: PlayerGateway,
+        game_gateway: GameGateway,
+        fake_chats: Dict[ChatID, Chat],
+        fake_games: Dict[GameID, Game],
+    ):
+        player_gateway._players = []
+        with pytest.raises(ApplicationException):
+            await StartGameHandler(
+                game_gateway,
+                player_turn_gateway,
+                player_gateway,
+                game_view,
+                fake_uow,
+            ).execute(StartGameCommand(list(fake_chats.keys())[1]))

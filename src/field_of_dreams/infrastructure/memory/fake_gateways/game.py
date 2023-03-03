@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 from field_of_dreams.domain.entities.game import Game, GameID
 from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.application.protocols.game import GameGateway
+from field_of_dreams.application.protocols.gateways.game import GameGateway
 
 
 class InMemoryGameGateway(GameGateway):
@@ -14,7 +14,7 @@ class InMemoryGameGateway(GameGateway):
         game.id = GameID(uuid.uuid4())
         self.games[game.id] = game
 
-    async def get_current_chat_game(self, chat_id: ChatID) -> Optional[Game]:
+    async def get_current_game(self, chat_id: ChatID) -> Optional[Game]:
         for game in list(self.games.values()):
             if game.chat_id == chat_id:
                 if game.is_active:
