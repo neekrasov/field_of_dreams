@@ -38,6 +38,7 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             if current_game is None:
                 raise ApplicationException("Игра не найдена.")
 
+            # TODO: Подгружать из алхимии selectin с юзерами.
             queue = await self._player_gateway.get_players(
                 current_game.id  # type: ignore
             )
@@ -52,5 +53,7 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             current_game.set_state(GameState.STARTED)
 
             await self._uow.commit()
-            await self._view.send_queue(queue)
-            await self._view.notify_first_player_of_turn(queue[0])
+            await self._view.send_queue(current_game.chat_id, queue)
+            await self._view.notify_first_player_of_turn(
+                current_game.chat_id, queue[0]
+            )

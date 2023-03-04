@@ -18,7 +18,7 @@ class UpdateHandler:
 
     async def handle(self, update):
         for middleware in self._middlewares:
-            update = await middleware(update, self._handler, self._bot)
+            update = await middleware(update, self._handler)
         await self._handler(update, self._bot)
 
     @property

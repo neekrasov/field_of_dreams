@@ -1,4 +1,4 @@
-from typing import Protocol, Callable, List, Type
+from typing import Protocol, Callable, List, Type, Awaitable
 
 
 class Filter(Protocol):
@@ -8,7 +8,10 @@ class Filter(Protocol):
 
 
 class Middleware(Protocol):
-    async def __call__(self, update: dict, handler: Callable):
+    def __init__(self, bot: "Bot") -> None:
+        raise NotImplementedError
+
+    async def __call__(self, update: dict, handler: Callable[..., Awaitable]):
         raise NotImplementedError
 
 

@@ -39,6 +39,7 @@ class BasePollerImpl(Poller):
                 for update in updates:
                     offset = update["update_id"] + 1
                     asyncio.create_task(self._bot.handle_update(update))
+                    # task.add_done_callback(debug)
             except Exception as e:
                 logger.info("Error while polling for updates: {}".format(e))
                 await asyncio.sleep(5)
@@ -46,3 +47,7 @@ class BasePollerImpl(Poller):
     async def stop(self):
         self._is_polling = False
         await self._session.close()
+
+
+# def debug(future):
+#     print(future)
