@@ -32,5 +32,19 @@ class PGSettings:
 
 
 @dataclass
+class BotSettings:
+    token: str = field(init=False)
+    timeout: int = field(init=False)
+
+    def __post_init__(self):
+        self._read_env()
+
+    def _read_env(self):
+        self.token = os.getenv("BOT_TOKEN")
+        self.timeout = os.getenv("BOT_TIMEOUT")
+
+
+@dataclass
 class Settings:
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
+    bot: BotSettings = field(init=False, default_factory=BotSettings)

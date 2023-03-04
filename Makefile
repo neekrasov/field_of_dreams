@@ -1,6 +1,10 @@
 include .env
 export
 
+ .PHONY: run-bot
+run-bot:
+	poetry run python src/field_of_dreams/presentation/tgbot/main.py
+
  .PHONY: migrate-up
 migrate-up:
 	poetry run alembic -c src/field_of_dreams/config/alembic.ini upgrade head
