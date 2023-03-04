@@ -11,9 +11,9 @@ PlayerID = NewType("PlayerID", uuid.UUID)
 
 
 class PlayerState(enum.Enum):
-    WINNER = "WINNER"
-    LOSER = "LOSER"
-    PLAYING = "PLAYING"
+    WINNER = "winner"
+    LOSER = "loser"
+    PLAYING = "playing"
 
 
 @dataclass

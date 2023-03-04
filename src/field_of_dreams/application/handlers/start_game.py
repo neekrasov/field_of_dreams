@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.domain.entities.game import GameStatus
+from field_of_dreams.domain.entities.game import GameState
 from field_of_dreams.domain.entities.player_turn import PlayerTurn
 from ..common import Handler, UnitOfWork, ApplicationException
 from ..protocols.gateways.game import GameGateway
@@ -49,7 +49,7 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             player_turn = PlayerTurn(queue[0].id)  # type: ignore
             await self._player_turn_gateway.add_player_turn(player_turn)
 
-            current_game.set_status(GameStatus.STARTED)
+            current_game.set_state(GameState.STARTED)
 
             await self._uow.commit()
             await self._view.send_queue(queue)

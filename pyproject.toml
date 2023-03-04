@@ -7,6 +7,9 @@ packages = [{include = "field_of_dreams", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "3.11"
+sqlalchemy = "^2.0.4"
+alembic = "^1.9.4"
+asyncpg = "^0.27.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"

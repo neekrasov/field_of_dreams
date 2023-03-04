@@ -9,9 +9,9 @@ PlayerTurnID = NewType("PlayerTurnID", int)
 
 
 class TurnState(enum.Enum):
-    PASSED = "PASSED"
-    FAILED = "FAILED"
-    IN_PROGRESS = "IN_PROGRESS"
+    PASSED = "passed"
+    FAILED = "failed"
+    IN_PROGRESS = "in_progress"
 
 
 @dataclass

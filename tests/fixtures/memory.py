@@ -3,7 +3,7 @@ import pytest
 from typing import Dict, List
 from datetime import timedelta, datetime
 
-from field_of_dreams.domain.entities.game import Game, GameID, GameStatus
+from field_of_dreams.domain.entities.game import Game, GameID, GameState
 from field_of_dreams.domain.entities.word import Word, WordID
 from field_of_dreams.domain.entities.chat import Chat, ChatID
 from field_of_dreams.domain.entities.user import User, UserID
@@ -55,7 +55,7 @@ def fake_words() -> Dict[WordID, Word]:
 
 
 @pytest.fixture(scope="class")
-def fake_users() -> Dict[ChatID, Chat]:
+def fake_users() -> Dict[UserID, User]:
     return {
         UserID(1): User(1, "user1"),
         UserID(2): User(2, "user2"),
@@ -81,10 +81,11 @@ def fake_players_ids() -> List[PlayerID]:
 def fake_games(
     fake_chats: Dict[ChatID, Chat],
     fake_words: Dict[WordID, Word],
-    fake_players_ids: List[PlayerID],
+    fake_users: Dict[UserID, User],
 ) -> Dict[GameID, Game]:
     chats_ids = list(fake_chats.keys())
     words_ids = list(fake_words.keys())
+    users_ids = list(fake_users.keys())
     first_game_id = GameID(uuid.uuid4())
     seconds_game_id = GameID(uuid.uuid4())
     return {
@@ -92,17 +93,17 @@ def fake_games(
             chats_ids[0],
             words_ids[0],
             id=first_game_id,
-            author=fake_players_ids[0],
+            author_id=users_ids[0],
             interval=timedelta(seconds=10),
-            game_status=GameStatus.FINISHED,
+            state=GameState.FINISHED,
         ),
         seconds_game_id: Game(
             chats_ids[1],
             words_ids[1],
             id=seconds_game_id,
-            author=fake_players_ids[1],
+            author_id=users_ids[1],
             interval=timedelta(seconds=20),
-            game_status=GameStatus.STARTED,
+            state=GameState.STARTED,
         ),
     }
 
