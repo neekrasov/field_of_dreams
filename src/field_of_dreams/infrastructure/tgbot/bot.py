@@ -1,6 +1,6 @@
 import aiohttp
 import json
-from typing import List, Callable, Type, Optional
+from typing import List, Callable, Type, Optional, Dict, Awaitable
 
 from .protocols import Bot, Middleware, Filter
 from .handler import UpdateHandler
@@ -17,6 +17,9 @@ class TelegramBot(Bot):
         self._session = session
         self._handlers: List[UpdateHandler] = []
         self._middlewares: List[Middleware] = []
+        self._exc_handlers: Dict[
+            Type[Exception], Callable[..., Awaitable]
+        ] = {}
 
     def add_handler(self, handler: Callable, filters: List[Type[Filter]]):
         self._handlers.append(
@@ -24,6 +27,7 @@ class TelegramBot(Bot):
                 self,
                 filters=filters,
                 middlewares=self._middlewares,
+                exc_handlers=self._exc_handlers,
                 handler=handler,
             )
         )
@@ -31,6 +35,13 @@ class TelegramBot(Bot):
 
     def add_middleware(self, middleware: Middleware):
         self._middlewares.append(middleware)
+
+    def add_exception_hander(
+        self,
+        exception_type: Type[Exception],
+        handler: Callable[..., Awaitable],
+    ):
+        self._exc_handlers[exception_type] = handler
 
     async def handle_update(self, update: dict):
         for handler in self._handlers:

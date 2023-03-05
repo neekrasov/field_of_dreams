@@ -39,12 +39,10 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
             except GatewayError:
                 pass
 
-            game = await self._game_gateway.get_current_game(
-                command.chat_id
-            )
+            game = await self._game_gateway.get_current_game(command.chat_id)
             if not game:
                 raise ApplicationException(
-                    "Can't join a game that doesn't exist"
+                    "Нельзя присоединится к этой игре, возможно она уже закончилась."  # noqa
                 )
 
             try:

@@ -50,4 +50,4 @@ class BasePollerImpl(Poller):
 
 
 # def debug(future):
-#     print(future)
+#     logger.info("debug {}".format(future))
