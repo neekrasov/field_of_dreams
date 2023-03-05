@@ -1,4 +1,5 @@
 from typing import Protocol, Optional
+
 from field_of_dreams.domain.entities.word import Word
 
 

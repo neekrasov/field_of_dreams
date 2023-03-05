@@ -4,5 +4,5 @@ from field_of_dreams.domain.entities.user import User
 
 
 class UserGateway(Protocol):
-    def add_user(self, user: User):
+    async def add_user(self, user: User):
         raise NotImplementedError

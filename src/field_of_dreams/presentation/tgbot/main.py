@@ -7,6 +7,7 @@ from di.dependent import Dependent
 from field_of_dreams.config import Settings
 from field_of_dreams.application.common.exception import ApplicationException
 from field_of_dreams.infrastructure.di import build_container, DIScope
+from field_of_dreams.infrastructure.persistence.sqlalchemy import models
 from field_of_dreams.infrastructure.tgbot import (
     TelegramBot,
     BasePollerImpl,
@@ -29,6 +30,7 @@ async def serve(token: str, timeout: int):
     bot.add_exception_hander(
         ApplicationException, application_exception_handler
     )
+    models.start_mapping()
     container = build_container()
     async with container.enter_scope(DIScope.APP) as di_state:
         bot.add_middleware(DIMiddleware(container, di_state, bot))
