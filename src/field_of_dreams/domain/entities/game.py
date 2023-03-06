@@ -44,3 +44,7 @@ class Game:
             self.state == GameState.STARTED
             or self.state == GameState.PREPARING
         )
+
+    @property
+    def is_started(self) -> bool:
+        return self.state == GameState.STARTED

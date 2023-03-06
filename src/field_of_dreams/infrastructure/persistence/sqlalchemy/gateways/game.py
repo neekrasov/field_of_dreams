@@ -23,4 +23,7 @@ class GameGatewayImpl(SqlalchemyGateway, GameGateway):
             )
         )
         result = await self._session.execute(stmt)
-        return result.scalar()
+        return result.scalars().first()
+
+    async def delete_game(self, game: Game):
+        await self._session.delete(game)

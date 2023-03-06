@@ -1,9 +1,8 @@
-from typing import Protocol, Callable, List, Type, Awaitable
+from typing import Protocol, Callable, List, Awaitable
 
 
 class Filter(Protocol):
-    @staticmethod
-    def filter(update: dict) -> bool:
+    def filter(self, update: dict) -> bool:
         raise NotImplementedError
 
 
@@ -16,7 +15,7 @@ class Middleware(Protocol):
 
 
 class Bot(Protocol):
-    def add_handler(self, handler: Callable, filters: List[Type[Filter]]):
+    def add_handler(self, handler: Callable, filters: List[Filter]):
         raise NotImplementedError
 
     def add_middleware(self, middleware: Middleware):

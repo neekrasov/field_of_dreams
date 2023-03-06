@@ -13,12 +13,13 @@ from field_of_dreams.infrastructure.tgbot import (
     BasePollerImpl,
     filters,
 )
+from middlewares import DIMiddleware
 from views.game import GameView, GameViewImpl
-from handlers.echo import echo_handler
+
+# from handlers.echo import echo_handler
 from handlers.exceptions import application_exception_handler
-from middlewares import (
-    DIMiddleware,
-)
+from handlers.on_chat_join import on_chat_join
+from handlers.game import start_game, join_to_game
 
 logger = logging.getLogger()
 
@@ -41,8 +42,13 @@ async def serve(token: str, timeout: int):
             ),
         )
         bot.add_handler(
-            echo_handler, [filters.MessageFilter, filters.GroupFilter]
+            on_chat_join, [filters.GroupFilter(), filters.OnChatJoinFilter()]
         )
+        bot.add_handler(
+            start_game,
+            [filters.GroupFilter(), filters.CommandFilter("/game")],
+        )
+        bot.add_handler(join_to_game, [filters.CallbackQueryFilter("join")])
 
     try:
         logger.info("Serve bot")

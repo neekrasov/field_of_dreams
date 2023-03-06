@@ -14,4 +14,5 @@ class SqlalchemyGateway:
         try:
             await self._session.flush()
         except IntegrityError as e:
+            await self._session.rollback()
             raise GatewayError(str(e))

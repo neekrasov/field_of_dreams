@@ -11,7 +11,7 @@ class UpdateHandler:
     def __init__(
         self,
         bot: Bot,
-        filters: List[Type[Filter]],
+        filters: List[Filter],
         middlewares: List[Middleware],
         handler: Callable[..., Awaitable],
         exc_handlers: Dict[Type[Exception], Callable[..., Awaitable]],

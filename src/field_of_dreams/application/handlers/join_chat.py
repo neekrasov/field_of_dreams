@@ -24,3 +24,5 @@ class JoinToChatHandler(Handler[JoinToChatCommand, None]):
                 )
             except GatewayError:
                 pass
+
+        await self._uow.commit()

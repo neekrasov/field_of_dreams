@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy import (
     Enum,
@@ -6,6 +6,7 @@ from sqlalchemy import (
     CHAR,
     ForeignKey,
     BIGINT,
+    Interval,
 )
 from sqlalchemy.orm import mapped_column, Mapped, registry
 
@@ -35,6 +36,7 @@ class Game(Base):
     state: Mapped[Enum] = mapped_column(
         Enum(GameState), default=GameState.PREPARING
     )
+    interval: Mapped[timedelta] = mapped_column(Interval())
     guessed_letters: Mapped[ARRAY] = mapped_column(ARRAY(CHAR), default=[])
     failed_letters: Mapped[ARRAY] = mapped_column(ARRAY(CHAR), default=[])
     start_time: Mapped[datetime] = mapped_column(default=datetime.utcnow())

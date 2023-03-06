@@ -46,13 +46,19 @@ def build_mediator(
         AddPlayerHandler(player_gateway, user_gateway, game_gateway, uow),
     )
     mediator.bind(
-        CreateGameCommand, CreateGameHandler(game_gateway, word_gateway, uow)
+        CreateGameCommand,
+        CreateGameHandler(game_gateway, word_gateway, user_gateway, uow),
     )
     mediator.bind(JoinToChatCommand, JoinToChatHandler(chat_gateway, uow))
     mediator.bind(
         StartGameCommand,
         StartGameHandler(
-            game_gateway, player_turn_gateway, player_gateway, view, uow
+            game_gateway,
+            player_turn_gateway,
+            player_gateway,
+            user_gateway,
+            view,
+            uow,
         ),
     )
     return mediator

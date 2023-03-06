@@ -46,5 +46,7 @@ class BotSettings:
 
 @dataclass
 class Settings:
+    players_waiting_time: int = field(init=False, default=20)
+    max_turn_time: int = field(init=False, default=15)
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)

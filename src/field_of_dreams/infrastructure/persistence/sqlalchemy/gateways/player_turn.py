@@ -7,5 +7,5 @@ from .base import SqlalchemyGateway
 
 class PlayerTurnGatewayImpl(SqlalchemyGateway, PlayerTurnGateway):
     async def add_player_turn(self, player_turn: PlayerTurn) -> None:
-        self._session.add(chat)
+        self._session.add(player_turn)
         await self._try_flush()

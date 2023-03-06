@@ -10,3 +10,6 @@ class GameGateway(Protocol):
 
     async def get_current_game(self, chat_id: ChatID) -> Optional[Game]:
         raise NotImplementedError
+
+    async def delete_game(self, game: Game) -> None:
+        raise NotImplementedError

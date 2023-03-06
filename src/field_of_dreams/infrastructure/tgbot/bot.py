@@ -21,7 +21,7 @@ class TelegramBot(Bot):
             Type[Exception], Callable[..., Awaitable]
         ] = {}
 
-    def add_handler(self, handler: Callable, filters: List[Type[Filter]]):
+    def add_handler(self, handler: Callable, filters: List[Filter]):
         self._handlers.append(
             UpdateHandler(
                 self,
@@ -55,10 +55,31 @@ class TelegramBot(Bot):
             f"{self._url}sendMessage?chat_id={chat_id}&text={text}",
         ]
         if reply_markup:
-            args.append(f"reply_markup={json.dumps(reply_markup)}")
+            args.append(f"&reply_markup={json.dumps(reply_markup)}")
         url = "".join(args)
 
         async with self._session.get(url) as response:
+            response.raise_for_status()
+            data = await response.text()
+            return json.loads(data)
+
+    async def get_me(self):
+        url = f"{self._url}getMe"
+        async with self._session.get(url) as response:
+            response.raise_for_status()
+            data = await response.text()
+            return json.loads(data)
+
+    async def edit_message(self, chat_id: int, message_id: int, text: str):
+        url = f"{self._url}editMessageText"
+        async with self._session.get(
+            url,
+            params={
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text,
+            },
+        ) as response:
             response.raise_for_status()
             data = await response.text()
             return json.loads(data)

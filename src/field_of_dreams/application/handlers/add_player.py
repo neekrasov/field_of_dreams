@@ -30,26 +30,29 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
         self._uow = uow
 
     async def execute(self, command: AddPlayerCommand):
-        async with self._uow.pipeline:
-            user_id = command.user_id
-            try:
-                await self._user_gateway.add_user(
-                    User(user_id, command.username)
-                )
-            except GatewayError:
-                pass
+        user_id = command.user_id
+        try:
+            await self._user_gateway.add_user(User(user_id, command.username))
+        except GatewayError:
+            pass
 
-            game = await self._game_gateway.get_current_game(command.chat_id)
-            if not game:
-                raise ApplicationException(
-                    "Нельзя присоединится к этой игре, возможно она уже закончилась."  # noqa
-                )
+        game = await self._game_gateway.get_current_game(command.chat_id)
+        if not game:
+            raise ApplicationException(
+                """Присоединится к игре невозможно, так как её не существует.
+                Чтобы создать игру введи команду /game.
+                """  # noqa
+            )
 
-            try:
-                await self._player_gateway.add_player(
-                    Player(game.id, user_id)  # type: ignore
-                )
-            except GatewayError:
-                pass
+        if game and game.is_started:
+            raise ApplicationException(
+                "Игра уже началась, попробуйте присоединиться позже."
+            )
+        try:
+            await self._player_gateway.add_player(
+                Player(game.id, user_id)  # type: ignore
+            )
+        except GatewayError:
+            pass
 
-            await self._uow.commit()
+        await self._uow.commit()
