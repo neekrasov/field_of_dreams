@@ -4,7 +4,12 @@ from datetime import timedelta
 
 from field_of_dreams.core.entities.chat import ChatID
 from field_of_dreams.core.entities.user import UserID
-from field_of_dreams.infrastructure.tgbot import filters, types, bot, states
+from field_of_dreams.infrastructure.tgbot import (
+    filters,
+    types,
+    protocols,
+    states,
+)
 from field_of_dreams.core.common import ApplicationException, Mediator
 from field_of_dreams.core.handlers.create_game import CreateGameCommand
 from field_of_dreams.core.handlers.add_player import AddPlayerCommand
@@ -16,7 +21,7 @@ logger = logging.getLogger()
 
 async def create_game(
     update: types.Update,
-    bot: bot.TelegramBot,
+    bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
 ):
@@ -56,7 +61,7 @@ async def create_game(
 
 async def wait_players(
     update: types.Update,
-    bot: bot.TelegramBot,
+    bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
 ):
@@ -91,7 +96,7 @@ async def wait_players(
 
 async def start_game(
     update: types.Update,
-    bot: bot.TelegramBot,
+    bot: protocols.Bot,
     mediator: Mediator,
 ):
     logger.info("Start game")
@@ -107,7 +112,7 @@ async def start_game(
 
 async def player_turn(
     update: types.Update,
-    bot: bot.TelegramBot,
+    bot: protocols.Bot,
     mediator: Mediator,
 ):
     logger.info("Player turn")
@@ -117,7 +122,7 @@ async def player_turn(
 
 async def join_to_game(
     update: types.Update,
-    bot: bot.TelegramBot,
+    bot: protocols.Bot,
     mediator: Mediator,
 ):
     logger.info("Join to game")
@@ -133,7 +138,7 @@ async def join_to_game(
     )
 
 
-def setup_handlers(bot: bot.TelegramBot):
+def setup_handlers(bot: protocols.Bot):
     bot.add_handler(
         join_to_game,
         [

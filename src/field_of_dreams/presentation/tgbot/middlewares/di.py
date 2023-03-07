@@ -4,13 +4,13 @@ from di.executors import AsyncExecutor
 from di.dependent import Dependent
 
 from field_of_dreams.infrastructure.di import DIScope
-from field_of_dreams.infrastructure.tgbot import Middleware, TelegramBot
+from field_of_dreams.infrastructure.tgbot import Middleware, Bot
 from field_of_dreams.infrastructure.tgbot.types import Update
 
 
 class DIMiddleware(Middleware):
     def __init__(
-        self, container: Container, di_state: ScopeState, bot: TelegramBot
+        self, container: Container, di_state: ScopeState, bot: Bot
     ) -> None:
         self._container = container
         self._di_state = di_state
@@ -34,6 +34,6 @@ class DIMiddleware(Middleware):
                 values={
                     Update: update,
                     Callable[..., Awaitable]: handler,  # type: ignore
-                    TelegramBot: self._bot,
+                    Bot: self._bot,
                 },
             )
