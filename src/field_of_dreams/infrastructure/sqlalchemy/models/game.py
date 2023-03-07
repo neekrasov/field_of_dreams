@@ -8,7 +8,7 @@ from sqlalchemy import (
     BIGINT,
     Interval,
 )
-from sqlalchemy.orm import mapped_column, Mapped, registry
+from sqlalchemy.orm import mapped_column, Mapped
 
 from field_of_dreams.domain.entities.game import (
     Game as GameEntity,
@@ -17,7 +17,7 @@ from field_of_dreams.domain.entities.game import (
 from .base import Base, uuidpk
 
 
-class Game(Base):
+class Game(Base, GameEntity):
     __tablename__ = "games"
 
     id: Mapped[uuidpk]
@@ -42,6 +42,3 @@ class Game(Base):
     start_time: Mapped[datetime] = mapped_column(default=datetime.utcnow())
     end_time: Mapped[Optional[datetime]] = mapped_column()
 
-
-def map_game_table(mapper_registry: registry):
-    mapper_registry.map_imperatively(GameEntity, Game.__table__)

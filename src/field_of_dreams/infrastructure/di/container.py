@@ -16,7 +16,7 @@ from field_of_dreams.application.protocols.gateways import (
     PlayerTurnGateway,
     PlayerGateway,
 )
-from field_of_dreams.infrastructure.persistence.sqlalchemy.gateways import (
+from field_of_dreams.infrastructure.sqlalchemy.gateways import (
     ChatGatewayImpl,
     GameGatewayImpl,
     PlayerGatewayImpl,
@@ -24,10 +24,10 @@ from field_of_dreams.infrastructure.persistence.sqlalchemy.gateways import (
     UserGatewayImpl,
     WordGatewayImpl,
 )
-from field_of_dreams.infrastructure.persistence.sqlalchemy.uow import (
+from field_of_dreams.infrastructure.sqlalchemy.uow import (
     UnitOfWorkImpl,
 )
-from field_of_dreams.infrastructure.persistence.sqlalchemy.factories import (
+from field_of_dreams.infrastructure.sqlalchemy.factories import (
     build_sa_session_factory,
     build_sa_session,
     build_sa_engine,

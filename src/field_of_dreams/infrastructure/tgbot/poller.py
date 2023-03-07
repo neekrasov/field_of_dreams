@@ -2,9 +2,10 @@ import aiohttp
 import asyncio
 import logging
 import json
+import traceback
 from typing import Optional
-
 from .protocols import Bot, Poller
+from .types import Update
 
 logger = logging.getLogger()
 
@@ -36,18 +37,15 @@ class BasePollerImpl(Poller):
         while self._is_polling:
             try:
                 updates = await self._get_updates(offset)
+                updates = [Update(**update) for update in updates]
                 for update in updates:
-                    offset = update["update_id"] + 1
+                    offset = update.update_id + 1
                     asyncio.create_task(self._bot.handle_update(update))
-                    # task.add_done_callback(debug)
             except Exception as e:
+                logger.info(traceback.format_exc())
                 logger.info("Error while polling for updates: {}".format(e))
                 await asyncio.sleep(5)
 
     async def stop(self):
         self._is_polling = False
         await self._session.close()
-
-
-# def debug(future):
-#     logger.info("debug {}".format(future))

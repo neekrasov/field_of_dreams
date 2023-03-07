@@ -213,7 +213,7 @@ class TestStartGameHandler:
         fake_games: Dict[GameID, Game],
     ):
         game = list(fake_games.values())[1]
-        await player_gateway.add_player(
+        await player_gateway.create_player(
             Player(
                 game.id,
                 123,

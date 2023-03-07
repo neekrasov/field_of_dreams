@@ -3,6 +3,7 @@ import logging
 from typing import List, Callable, Type, Dict, Awaitable
 
 from .protocols import Bot, Middleware, Filter
+from .types import Update
 
 logger = logging.getLogger()
 
@@ -22,7 +23,7 @@ class UpdateHandler:
         self._bot = bot
         self._exc_handlers = exc_handlers
 
-    async def handle(self, update: dict):
+    async def handle(self, update: Update):
         try:
             for middleware in self._middlewares:
                 update = await middleware(update, self._handler)

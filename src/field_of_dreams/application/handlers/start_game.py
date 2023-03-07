@@ -56,6 +56,8 @@ class StartGameHandler(Handler[StartGameCommand, None]):
         current_game.set_state(GameState.STARTED)
         first_user = await self._user_gateway.get_user_by_id(queue[0].user_id)
         await self._uow.commit()
+
+        await self._view.show_queue(current_game.chat_id, queue)
         await self._view.notify_first_player_of_turn(
             current_game.chat_id, first_user
         )

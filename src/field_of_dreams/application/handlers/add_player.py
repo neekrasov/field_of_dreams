@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from field_of_dreams.domain.entities.user import UserID, User
-from field_of_dreams.domain.entities.player import Player
 from field_of_dreams.domain.entities.chat import ChatID
 from ..common import Handler, UnitOfWork, ApplicationException, GatewayError
 from ..protocols.gateways.player import PlayerGateway
@@ -49,10 +48,8 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
                 "Игра уже началась, попробуйте присоединиться позже."
             )
         try:
-            await self._player_gateway.add_player(
-                Player(game.id, user_id)  # type: ignore
-            )
-        except GatewayError:
-            pass
+            await self._player_gateway.create_player(game.id, user_id)  # type: ignore # noqa
+        except GatewayError as e:
+            print(e)
 
         await self._uow.commit()

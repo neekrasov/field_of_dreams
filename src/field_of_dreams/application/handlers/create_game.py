@@ -45,7 +45,7 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
             pass
 
         exists = await self._game_gateway.get_current_game(command.chat_id)
-        if exists:
+        if exists and not exists.is_created:
             raise ApplicationException(
                 "Игра уже началась. Дождитесь завершения прошлой игры."
             )
@@ -54,12 +54,13 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
         if word is None:
             raise ApplicationException("Нет доступных слов")
 
-        await self._game_gateway.add_game(
-            Game(
-                chat_id=command.chat_id,
-                word_id=word.id,  # type: ignore
-                interval=command.max_turn_time,
-                author_id=user.id,
+        if not exists or exists.is_created:
+            await self._game_gateway.add_game(
+                Game(
+                    chat_id=command.chat_id,
+                    word_id=word.id,  # type: ignore
+                    interval=command.max_turn_time,
+                    author_id=user.id,
+                )
             )
-        )
         await self._uow.commit()

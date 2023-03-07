@@ -6,16 +6,17 @@ from sqlalchemy import (
     UniqueConstraint,
     BIGINT,
 )
-from sqlalchemy.orm import mapped_column, Mapped, registry
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from field_of_dreams.domain.entities.player import (
     PlayerState,
     Player as PlayerEntity,
 )
 from .base import Base, uuidpk
+from .user import User
 
 
-class Player(Base):
+class Player(Base, PlayerEntity):
     __tablename__ = "players"
 
     id: Mapped[uuidpk]
@@ -29,9 +30,6 @@ class Player(Base):
         Enum(PlayerState), default=PlayerState.PLAYING
     )
     joined_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
+    user: Mapped["User"] = relationship()
 
     __table_args__ = (UniqueConstraint("game_id", "user_id"),)
-
-
-def map_player_table(mapper_registry: registry):
-    mapper_registry.map_imperatively(PlayerEntity, Player.__table__)

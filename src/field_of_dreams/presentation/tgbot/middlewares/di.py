@@ -5,6 +5,7 @@ from di.dependent import Dependent
 
 from field_of_dreams.infrastructure.di import DIScope
 from field_of_dreams.infrastructure.tgbot import Middleware, TelegramBot
+from field_of_dreams.infrastructure.tgbot.types import Update
 
 
 class DIMiddleware(Middleware):
@@ -17,7 +18,7 @@ class DIMiddleware(Middleware):
 
     async def __call__(
         self,
-        update: dict,
+        update: Update,
         handler: Callable[..., Awaitable],
     ):
         async with self._container.enter_scope(
@@ -31,7 +32,7 @@ class DIMiddleware(Middleware):
                 AsyncExecutor(),
                 request_state,
                 values={
-                    dict: update,
+                    Update: update,
                     Callable[..., Awaitable]: handler,  # type: ignore
                     TelegramBot: self._bot,
                 },

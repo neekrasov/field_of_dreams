@@ -20,8 +20,10 @@ class PlayerState(enum.Enum):
 class Player:
     game_id: GameID
     user_id: UserID
-    score: int = 0
+    user: User
     state: PlayerState = PlayerState.PLAYING
     id: Optional[PlayerID] = None
     joined_at: Optional[datetime] = None
-    user: Optional[User] = None
+
+    def get_username(self) -> str:
+        return self.user.name

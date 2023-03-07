@@ -7,19 +7,12 @@ from di.dependent import Dependent
 from field_of_dreams.config import Settings
 from field_of_dreams.application.common.exception import ApplicationException
 from field_of_dreams.infrastructure.di import build_container, DIScope
-from field_of_dreams.infrastructure.persistence.sqlalchemy import models
-from field_of_dreams.infrastructure.tgbot import (
-    TelegramBot,
-    BasePollerImpl,
-    filters,
-)
+# from field_of_dreams.infrastructure.persistence.sqlalchemy import mapping
+from field_of_dreams.infrastructure.tgbot import TelegramBot, BasePollerImpl
 from middlewares import DIMiddleware
 from views.game import GameView, GameViewImpl
-
-# from handlers.echo import echo_handler
 from handlers.exceptions import application_exception_handler
-from handlers.on_chat_join import on_chat_join
-from handlers.game import start_game, join_to_game
+from handlers import game, on_chat_join
 
 logger = logging.getLogger()
 
@@ -31,8 +24,9 @@ async def serve(token: str, timeout: int):
     bot.add_exception_hander(
         ApplicationException, application_exception_handler
     )
-    models.start_mapping()
+    # mapping.start()
     container = build_container()
+
     async with container.enter_scope(DIScope.APP) as di_state:
         bot.add_middleware(DIMiddleware(container, di_state, bot))
         container.bind(
@@ -41,14 +35,8 @@ async def serve(token: str, timeout: int):
                 GameView,
             ),
         )
-        bot.add_handler(
-            on_chat_join, [filters.GroupFilter(), filters.OnChatJoinFilter()]
-        )
-        bot.add_handler(
-            start_game,
-            [filters.GroupFilter(), filters.CommandFilter("/game")],
-        )
-        bot.add_handler(join_to_game, [filters.CallbackQueryFilter("join")])
+        game.setup_handlers(bot)
+        on_chat_join.setup_handlers(bot)
 
     try:
         logger.info("Serve bot")

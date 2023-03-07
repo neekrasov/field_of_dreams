@@ -4,6 +4,8 @@ from typing import List, Callable, Type, Optional, Dict, Awaitable
 
 from .protocols import Bot, Middleware, Filter
 from .handler import UpdateHandler
+from .states import GameState
+from .types import Update, User, Message
 
 
 class TelegramBot(Bot):
@@ -20,6 +22,7 @@ class TelegramBot(Bot):
         self._exc_handlers: Dict[
             Type[Exception], Callable[..., Awaitable]
         ] = {}
+        self._states: Dict[int, GameState] = {}
 
     def add_handler(self, handler: Callable, filters: List[Filter]):
         self._handlers.append(
@@ -36,6 +39,20 @@ class TelegramBot(Bot):
     def add_middleware(self, middleware: Middleware):
         self._middlewares.append(middleware)
 
+    def set_state(self, chat_id: int, state: GameState):
+        self._states[chat_id] = state
+
+    def get_state(self, chat_id: int) -> Optional[GameState]:
+        return self._states.get(chat_id)
+
+    def _set_state_in_update(self, update: Update):
+        if update.callback_query is not None:
+            update.state = self._states.get(  # type: ignore
+                update.callback_query.message.chat.id  # type: ignore
+            )
+        elif update.message is not None:
+            update.state = self._states.get(update.message.chat.id)  # type: ignore  # noqa
+
     def add_exception_hander(
         self,
         exception_type: Type[Exception],
@@ -43,13 +60,16 @@ class TelegramBot(Bot):
     ):
         self._exc_handlers[exception_type] = handler
 
-    async def handle_update(self, update: dict):
+    async def handle_update(self, update: Update):
+        self._set_state_in_update(update)
+
         for handler in self._handlers:
             if all(filter.filter(update) for filter in handler.filters):
                 await handler.handle(update)
+                break
 
     async def send_message(
-        self, chat_id: str, text: str, reply_markup: Optional[dict] = None
+        self, chat_id: int, text: str, reply_markup: Optional[dict] = None
     ):
         args = [
             f"{self._url}sendMessage?chat_id={chat_id}&text={text}",
@@ -61,14 +81,14 @@ class TelegramBot(Bot):
         async with self._session.get(url) as response:
             response.raise_for_status()
             data = await response.text()
-            return json.loads(data)
+            return Message(**json.loads(data)["result"])
 
-    async def get_me(self):
+    async def get_me(self) -> User:
         url = f"{self._url}getMe"
         async with self._session.get(url) as response:
             response.raise_for_status()
             data = await response.text()
-            return json.loads(data)
+            return User(**json.loads(data)["result"])
 
     async def edit_message(self, chat_id: int, message_id: int, text: str):
         url = f"{self._url}editMessageText"
@@ -77,6 +97,19 @@ class TelegramBot(Bot):
             params={
                 "chat_id": chat_id,
                 "message_id": message_id,
+                "text": text,
+            },
+        ) as response:
+            response.raise_for_status()
+            data = await response.text()
+            return Message(**json.loads(data)["result"])
+
+    async def answer_callback_query(self, callback_query_id: int, text: str):
+        url = f"{self._url}answerCallbackQuery"
+        async with self._session.get(
+            url,
+            params={
+                "callback_query_id": callback_query_id,
                 "text": text,
             },
         ) as response:

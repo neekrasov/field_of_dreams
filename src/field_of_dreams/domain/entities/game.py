@@ -15,6 +15,7 @@ GameID = NewType("GameID", uuid.UUID)
 
 
 class GameState(enum.Enum):
+    CREATED = "created"
     PREPARING = "preparing"
     STARTED = "started"
     FINISHED = "finished"
@@ -28,7 +29,7 @@ class Game:
     author_id: UserID
     current_turn_id: Optional["PlayerTurnID"] = None
 
-    state: GameState = GameState.PREPARING
+    state: GameState = GameState.CREATED
     guessed_letters: List[str] = field(default_factory=list)
     failed_letters: List[str] = field(default_factory=list)
     start_time: Optional[datetime] = None
@@ -48,3 +49,7 @@ class Game:
     @property
     def is_started(self) -> bool:
         return self.state == GameState.STARTED
+
+    @property
+    def is_created(self) -> bool:
+        return self.state == GameState.CREATED
