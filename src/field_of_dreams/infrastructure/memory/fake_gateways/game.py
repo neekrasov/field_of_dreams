@@ -1,9 +1,9 @@
 import uuid
 from typing import Dict, Optional
 
-from field_of_dreams.domain.entities.game import Game, GameID
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.application.protocols.gateways.game import GameGateway
+from field_of_dreams.core.entities.game import Game, GameID
+from field_of_dreams.core.entities.chat import ChatID
+from field_of_dreams.core.protocols.gateways.game import GameGateway
 
 
 class InMemoryGameGateway(GameGateway):

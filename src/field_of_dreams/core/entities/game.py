@@ -9,7 +9,7 @@ from .word import WordID, Word
 from .user import UserID
 
 if TYPE_CHECKING:
-    from .player_turn import PlayerTurnID
+    from .player import PlayerID
 
 GameID = NewType("GameID", uuid.UUID)
 
@@ -29,7 +29,7 @@ class Game:
     author_id: UserID
     word: Word
 
-    current_turn_id: Optional["PlayerTurnID"] = None
+    cur_player_id: Optional["PlayerID"] = None
     state: GameState = GameState.CREATED
     guessed_letters: List[str] = field(default_factory=list)
     start_time: Optional[datetime] = None
@@ -39,15 +39,8 @@ class Game:
     def set_state(self, state: GameState):
         self.state = state
 
-    def set_turn(self, turn_id: "PlayerTurnID"):
-        self.current_turn_id = turn_id
-
-    @property
-    def is_active(self) -> bool:
-        return (
-            self.state == GameState.STARTED
-            or self.state == GameState.PREPARING
-        )
+    def set_current_player(self, player_id: "PlayerID"):
+        self.cur_player_id = player_id
 
     @property
     def is_started(self) -> bool:

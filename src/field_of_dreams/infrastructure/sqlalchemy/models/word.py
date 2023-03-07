@@ -1,6 +1,6 @@
 from sqlalchemy.orm import mapped_column, Mapped
 
-from field_of_dreams.domain.entities.word import Word as WordEntity
+from field_of_dreams.core.entities.word import Word as WordEntity
 from .base import Base
 
 

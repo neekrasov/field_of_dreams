@@ -1,8 +1,8 @@
 from typing import Dict
 
-from field_of_dreams.domain.entities.chat import Chat, ChatID
-from field_of_dreams.application.protocols.gateways.chat import ChatGateway
-from field_of_dreams.application.common import GatewayError
+from field_of_dreams.core.entities.chat import Chat, ChatID
+from field_of_dreams.core.protocols.gateways.chat import ChatGateway
+from field_of_dreams.core.common import GatewayError
 
 
 class InMemoryChatGateway(ChatGateway):

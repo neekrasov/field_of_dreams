@@ -1,8 +1,8 @@
 from typing import Sequence
 
-from field_of_dreams.domain.entities.player import Player
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.application.protocols.views.game import GameView
+from field_of_dreams.core.entities.player import Player
+from field_of_dreams.core.entities.chat import ChatID
+from field_of_dreams.core.protocols.views.game import GameView
 from field_of_dreams.infrastructure.tgbot.protocols import Bot
 
 
@@ -26,7 +26,7 @@ class GameViewImpl(GameView):
     async def pin_word_mask(
         self, chat_id: ChatID, word_mask: str, question: str
     ) -> None:
-        ad_msg = (f"Вопрос: {question} \n" f"Слово: {word_mask}")
+        ad_msg = f"Вопрос: {question} \n" f"Слово: {word_mask}"
         chat = await self._bot.get_chat(chat_id)
         bot = await self._bot.get_me()
         if message := chat.pinned_message:  # type: ignore

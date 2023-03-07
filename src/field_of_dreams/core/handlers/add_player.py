@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from field_of_dreams.domain.entities.user import UserID, User
-from field_of_dreams.domain.entities.chat import ChatID
+from ..entities.user import UserID
+from ..entities.chat import ChatID
 from ..common import Handler, UnitOfWork, ApplicationException, GatewayError
 from ..protocols.gateways.player import PlayerGateway
 from ..protocols.gateways.user import UserGateway
@@ -31,7 +31,7 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
     async def execute(self, command: AddPlayerCommand):
         user_id = command.user_id
         try:
-            await self._user_gateway.add_user(User(user_id, command.username))
+            await self._user_gateway.create_user(user_id, command.username)
         except GatewayError:
             pass
 

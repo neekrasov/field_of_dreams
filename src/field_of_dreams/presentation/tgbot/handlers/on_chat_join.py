@@ -1,6 +1,6 @@
 from field_of_dreams.infrastructure.tgbot import filters, types, bot
-from field_of_dreams.application.common import Mediator
-from field_of_dreams.application.handlers.join_chat import JoinToChatCommand
+from field_of_dreams.core.common import Mediator
+from field_of_dreams.core.handlers.join_chat import JoinToChatCommand
 
 
 async def on_chat_join(
@@ -11,8 +11,8 @@ async def on_chat_join(
     if me.username == joined_name:
         await mediator.send(
             JoinToChatCommand(
-                chat_id=update.message.chat.id,  # type: ignore
-                chat_name=update.message.chat.title,  # type: ignore
+                update.message.chat.id,  # type: ignore
+                update.message.chat.title,  # type: ignore
             )
         )
 

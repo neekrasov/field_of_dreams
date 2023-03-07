@@ -10,7 +10,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from field_of_dreams.domain.entities.game import (
+from field_of_dreams.core.entities.game import (
     Game as GameEntity,
     GameState,
 )
@@ -31,8 +31,8 @@ class Game(Base, GameEntity):
     author_id: Mapped[int] = mapped_column(
         BIGINT(), ForeignKey("users.id", ondelete="CASCADE")
     )
-    current_turn_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("players_turns.id", ondelete="CASCADE", use_alter=True)
+    cur_player_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE", use_alter=True)
     )
     state: Mapped[Enum] = mapped_column(
         Enum(GameState), default=GameState.PREPARING

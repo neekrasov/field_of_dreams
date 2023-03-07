@@ -1,15 +1,15 @@
-from dataclasses import asdict
 from sqlalchemy.sql import select
 
-from field_of_dreams.domain.entities.user import User, UserID
-from field_of_dreams.application.protocols.gateways.user import UserGateway
+from field_of_dreams.core.entities.user import UserID
+from field_of_dreams.core.protocols.gateways.user import UserGateway
 from .base import SqlalchemyGateway
 from ..models import User as UserModel
 
 
 class UserGatewayImpl(SqlalchemyGateway, UserGateway):
-    async def add_user(self, user: User):
-        self._session.add(UserModel(**asdict(user)))
+    async def create_user(self, user_id: UserID, username: str):
+        db_user = UserModel(id=user_id, name=username)
+        self._session.add(db_user)
         await self._try_flush()
 
     async def get_user_by_id(self, user_id: UserID):

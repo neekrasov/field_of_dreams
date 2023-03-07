@@ -1,8 +1,8 @@
 from typing import Dict
 
-from field_of_dreams.domain.entities.user import User, UserID
-from field_of_dreams.application.protocols.gateways.user import UserGateway
-from field_of_dreams.application.common import GatewayError
+from field_of_dreams.core.entities.user import User, UserID
+from field_of_dreams.core.protocols.gateways.user import UserGateway
+from field_of_dreams.core.common import GatewayError
 
 
 class InMemoryUserGateway(UserGateway):

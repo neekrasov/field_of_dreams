@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
-from field_of_dreams.application.common.handler import Handler, InputType
-from field_of_dreams.application.common.mediator import (
+from field_of_dreams.core.common.handler import Handler, InputType
+from field_of_dreams.core.common.mediator import (
     Mediator,
     CommandNotFoundException,
 )

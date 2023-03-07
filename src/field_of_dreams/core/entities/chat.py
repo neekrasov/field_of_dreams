@@ -6,5 +6,5 @@ ChatID = NewType("ChatID", int)
 
 @dataclass
 class Chat:
-    name: str
+    title: str
     id: ChatID

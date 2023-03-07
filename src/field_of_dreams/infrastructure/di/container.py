@@ -7,20 +7,18 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
-from field_of_dreams.application.common import UnitOfWork, Mediator
-from field_of_dreams.application.protocols.gateways import (
+from field_of_dreams.core.common import UnitOfWork, Mediator
+from field_of_dreams.core.protocols.gateways import (
     ChatGateway,
     GameGateway,
     UserGateway,
     WordGateway,
-    PlayerTurnGateway,
     PlayerGateway,
 )
 from field_of_dreams.infrastructure.sqlalchemy.gateways import (
     ChatGatewayImpl,
     GameGatewayImpl,
     PlayerGatewayImpl,
-    PlayerTurnGatewayImpl,
     UserGatewayImpl,
     WordGatewayImpl,
 )
@@ -73,12 +71,6 @@ def build_gateways(container: Container) -> None:
     container.bind(
         bind_by_type(
             Dependent(PlayerGatewayImpl, scope=DIScope.REQUEST), PlayerGateway
-        )
-    )
-    container.bind(
-        bind_by_type(
-            Dependent(PlayerTurnGatewayImpl, scope=DIScope.REQUEST),
-            PlayerTurnGateway,
         )
     )
     container.bind(

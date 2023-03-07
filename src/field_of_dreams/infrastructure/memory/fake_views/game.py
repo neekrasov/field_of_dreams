@@ -1,7 +1,7 @@
 from typing import List
 
-from field_of_dreams.domain.entities.player import Player
-from field_of_dreams.application.protocols.views.game import GameView
+from field_of_dreams.core.entities.player import Player
+from field_of_dreams.core.protocols.views.game import GameView
 
 
 class FakeGameView(GameView):

@@ -2,13 +2,13 @@ import asyncio
 import logging
 from datetime import timedelta
 
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.domain.entities.user import UserID
+from field_of_dreams.core.entities.chat import ChatID
+from field_of_dreams.core.entities.user import UserID
 from field_of_dreams.infrastructure.tgbot import filters, types, bot, states
-from field_of_dreams.application.common import ApplicationException, Mediator
-from field_of_dreams.application.handlers.create_game import CreateGameCommand
-from field_of_dreams.application.handlers.add_player import AddPlayerCommand
-from field_of_dreams.application.handlers.start_game import StartGameCommand
+from field_of_dreams.core.common import ApplicationException, Mediator
+from field_of_dreams.core.handlers.create_game import CreateGameCommand
+from field_of_dreams.core.handlers.add_player import AddPlayerCommand
+from field_of_dreams.core.handlers.start_game import StartGameCommand
 from field_of_dreams.config import Settings
 
 logger = logging.getLogger()

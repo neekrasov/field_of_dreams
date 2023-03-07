@@ -1,8 +1,8 @@
 from typing import Protocol, Sequence
 
-from field_of_dreams.domain.entities.game import GameID
-from field_of_dreams.domain.entities.user import UserID
-from field_of_dreams.domain.entities.player import Player
+from field_of_dreams.core.entities.game import GameID
+from field_of_dreams.core.entities.user import UserID
+from field_of_dreams.core.entities.player import Player
 
 
 class PlayerGateway(Protocol):

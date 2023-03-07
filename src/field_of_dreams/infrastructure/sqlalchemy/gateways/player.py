@@ -2,10 +2,10 @@ from typing import Sequence, cast
 from sqlalchemy.sql import select
 from sqlalchemy.orm import selectinload
 
-from field_of_dreams.domain.entities.game import GameID
-from field_of_dreams.domain.entities.user import UserID
-from field_of_dreams.domain.entities.player import Player
-from field_of_dreams.application.protocols.gateways.player import PlayerGateway
+from field_of_dreams.core.entities.game import GameID
+from field_of_dreams.core.entities.user import UserID
+from field_of_dreams.core.entities.player import Player
+from field_of_dreams.core.protocols.gateways.player import PlayerGateway
 from .base import SqlalchemyGateway
 from ..models import Player as PlayerModel
 

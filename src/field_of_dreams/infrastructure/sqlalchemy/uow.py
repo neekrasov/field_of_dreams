@@ -2,7 +2,7 @@ import contextlib
 from typing import AsyncGenerator, AsyncContextManager
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 
-from field_of_dreams.application.common import UnitOfWork
+from field_of_dreams.core.common import UnitOfWork
 
 
 class UnitOfWorkImpl(UnitOfWork):

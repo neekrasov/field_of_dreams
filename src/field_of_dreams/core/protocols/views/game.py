@@ -1,7 +1,7 @@
 from typing import Protocol, Sequence
 
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.domain.entities.player import Player
+from field_of_dreams.core.entities.chat import ChatID
+from field_of_dreams.core.entities.player import Player
 
 
 class GameView(Protocol):

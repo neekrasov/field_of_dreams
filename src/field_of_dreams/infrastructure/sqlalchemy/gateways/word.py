@@ -3,8 +3,8 @@ from typing import Optional, cast
 from dataclasses import asdict
 from sqlalchemy.sql import func, select
 
-from field_of_dreams.domain.entities.word import Word
-from field_of_dreams.application.protocols.gateways.word import WordGateway
+from field_of_dreams.core.entities.word import Word
+from field_of_dreams.core.protocols.gateways.word import WordGateway
 from .base import SqlalchemyGateway
 from ..models import Word as WordModel
 

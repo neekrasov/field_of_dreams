@@ -2,7 +2,7 @@ import logging
 
 from field_of_dreams.infrastructure.tgbot import TelegramBot
 from field_of_dreams.infrastructure.tgbot.types import Update
-from field_of_dreams.application.common.exception import ApplicationException
+from field_of_dreams.core.common.exception import ApplicationException
 
 logger = logging.getLogger()
 

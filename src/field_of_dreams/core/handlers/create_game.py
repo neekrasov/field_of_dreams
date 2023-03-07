@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 import logging
 
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.domain.entities.user import UserID, User
+from ..entities.chat import ChatID
+from ..entities.user import UserID
 from ..common import Handler, UnitOfWork, ApplicationException, GatewayError
 from ..protocols.gateways import (
     GameGateway,
@@ -36,11 +36,11 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
         self._uow = uow
 
     async def execute(self, command: CreateGameCommand) -> None:
-        user = User(command.author_id, command.author_name)
+        user_id = command.author_id
         try:
-            await self._user_gateway.add_user(user)
+            await self._user_gateway.create_user(user_id, command.author_name)
         except GatewayError:
-            logger.info("User {} already exists".format(command.author_id))
+            logger.info("User {} already exists".format(user_id))
             pass
 
         exists = await self._game_gateway.get_current_game(command.chat_id)
@@ -57,6 +57,6 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
             chat_id=command.chat_id,
             word_id=word.id,  # type: ignore
             interval=command.max_turn_time,
-            author_id=user.id,
+            author_id=user_id,
         )
         await self._uow.commit()

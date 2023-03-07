@@ -1,10 +1,10 @@
 from typing import Protocol
 
-from field_of_dreams.domain.entities.user import User, UserID
+from field_of_dreams.core.entities.user import UserID
 
 
 class UserGateway(Protocol):
-    async def add_user(self, user: User):
+    async def create_user(self, user_id: UserID, username: str):
         raise NotImplementedError
 
     async def get_user_by_id(self, user_id: UserID):

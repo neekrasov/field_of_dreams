@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from field_of_dreams.application.common.exception import GatewayError
+from field_of_dreams.core.common.exception import GatewayError
 
 
 class SqlalchemyGateway:

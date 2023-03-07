@@ -1,8 +1,8 @@
 import random
 from typing import Dict, Optional
 
-from field_of_dreams.domain.entities.word import Word, WordID
-from field_of_dreams.application.protocols.gateways.word import WordGateway
+from field_of_dreams.core.entities.word import Word, WordID
+from field_of_dreams.core.protocols.gateways.word import WordGateway
 
 
 class InMemoryWordGateway(WordGateway):

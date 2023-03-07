@@ -11,9 +11,8 @@ PlayerID = NewType("PlayerID", uuid.UUID)
 
 
 class PlayerState(enum.Enum):
-    WINNER = "winner"
-    LOSER = "loser"
-    PLAYING = "playing"
+    WAITING = "waiting"
+    PROCESSING = "processing"
 
 
 @dataclass
@@ -21,9 +20,13 @@ class Player:
     game_id: GameID
     user_id: UserID
     user: User
-    state: PlayerState = PlayerState.PLAYING
+    is_active: bool
+    state: PlayerState = PlayerState.WAITING
     id: Optional[PlayerID] = None
     joined_at: Optional[datetime] = None
 
     def get_username(self) -> str:
         return self.user.name
+
+    def set_state(self, state: PlayerState) -> None:
+        self.state = state

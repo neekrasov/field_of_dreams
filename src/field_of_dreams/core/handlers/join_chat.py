@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from field_of_dreams.domain.entities.chat import ChatID, Chat
+from ..entities.chat import ChatID
 from ..common import Handler, UnitOfWork, GatewayError
 from ..protocols.gateways.chat import ChatGateway
 
@@ -8,7 +8,7 @@ from ..protocols.gateways.chat import ChatGateway
 @dataclass(frozen=True)
 class JoinToChatCommand:
     chat_id: ChatID
-    chat_name: str
+    chat_title: str
 
 
 class JoinToChatHandler(Handler[JoinToChatCommand, None]):
@@ -19,8 +19,8 @@ class JoinToChatHandler(Handler[JoinToChatCommand, None]):
     async def execute(self, command: JoinToChatCommand):
         async with self._uow.pipeline:
             try:
-                await self._chat_gateway.add_chat(
-                    Chat(id=command.chat_id, name=command.chat_name)
+                await self._chat_gateway.create_chat(
+                    command.chat_id, command.chat_title
                 )
             except GatewayError:
                 pass

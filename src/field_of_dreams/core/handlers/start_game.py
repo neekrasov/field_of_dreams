@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.domain.entities.game import GameState
+from ..entities.chat import ChatID
+from ..entities.game import GameState
+from ..entities.player import PlayerState
 from ..common import Handler, UnitOfWork, ApplicationException
 from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
-from ..protocols.gateways.player_turn import PlayerTurnGateway
 from ..protocols.gateways.user import UserGateway
 from ..protocols.views.game import GameView
 
@@ -19,14 +19,12 @@ class StartGameHandler(Handler[StartGameCommand, None]):
     def __init__(
         self,
         game_gateway: GameGateway,
-        player_turn_gateway: PlayerTurnGateway,
         player_gateway: PlayerGateway,
         user_gateway: UserGateway,
         view: GameView,
         uow: UnitOfWork,
     ):
         self._game_gateway = game_gateway
-        self._player_turn_gateway = player_turn_gateway
         self._player_gateway = player_gateway
         self._user_gateway = user_gateway
         self._view = view
@@ -47,13 +45,11 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             raise ApplicationException(
                 "Количество игроков довольно мало, чтобы начать игру."
             )
-        turn_id = await self._player_turn_gateway.create_player_turn(
-            queue[0].id  # type: ignore
-        )
+        queue[0].set_state(PlayerState.PROCESSING)
         word = current_game.word
         word_mask = word.get_mask(current_game.guessed_letters)
         current_game.set_state(GameState.STARTED)
-        current_game.set_turn(turn_id)
+        current_game.set_current_player(queue[0].id)  # type: ignore
         await self._uow.commit()
 
         await self._view.pin_word_mask(chat_id, word_mask, word.question)

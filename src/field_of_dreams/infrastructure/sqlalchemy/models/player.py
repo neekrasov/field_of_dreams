@@ -8,7 +8,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from field_of_dreams.domain.entities.player import (
+from field_of_dreams.core.entities.player import (
     PlayerState,
     Player as PlayerEntity,
 )
@@ -27,9 +27,11 @@ class Player(Base, PlayerEntity):
         BIGINT(), ForeignKey("users.id", ondelete="CASCADE")
     )
     state: Mapped[Enum] = mapped_column(
-        Enum(PlayerState), default=PlayerState.PLAYING
+        Enum(PlayerState), default=PlayerState.WAITING
     )
+    is_active: Mapped[bool] = mapped_column(default=True)
     joined_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
+
     user: Mapped["User"] = relationship()
 
     __table_args__ = (UniqueConstraint("game_id", "user_id"),)

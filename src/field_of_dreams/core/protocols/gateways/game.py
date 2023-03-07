@@ -1,10 +1,10 @@
 from typing import Protocol, Optional
 from datetime import timedelta
 
-from field_of_dreams.domain.entities.game import Game, GameID
-from field_of_dreams.domain.entities.chat import ChatID
-from field_of_dreams.domain.entities.word import WordID
-from field_of_dreams.domain.entities.user import UserID
+from field_of_dreams.core.entities.game import Game, GameID
+from field_of_dreams.core.entities.chat import ChatID
+from field_of_dreams.core.entities.word import WordID
+from field_of_dreams.core.entities.user import UserID
 
 
 class GameGateway(Protocol):

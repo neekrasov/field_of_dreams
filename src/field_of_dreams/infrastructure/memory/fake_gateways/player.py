@@ -1,10 +1,10 @@
 import uuid
 from typing import Dict, List
 
-from field_of_dreams.domain.entities.player import Player, PlayerID
-from field_of_dreams.domain.entities.game import GameID
-from field_of_dreams.application.protocols.gateways.player import PlayerGateway
-from field_of_dreams.application.common import GatewayError
+from field_of_dreams.core.entities.player import Player, PlayerID
+from field_of_dreams.core.entities.game import GameID
+from field_of_dreams.core.protocols.gateways.player import PlayerGateway
+from field_of_dreams.core.common import GatewayError
 
 
 class InMemoryPlayerGateway(PlayerGateway):

@@ -5,7 +5,7 @@ from di import bind_by_type
 from di.dependent import Dependent
 
 from field_of_dreams.config import Settings
-from field_of_dreams.application.common.exception import ApplicationException
+from field_of_dreams.core.common.exception import ApplicationException
 from field_of_dreams.infrastructure.di import build_container, DIScope
 from field_of_dreams.infrastructure.tgbot import TelegramBot, BasePollerImpl
 from middlewares import DIMiddleware
