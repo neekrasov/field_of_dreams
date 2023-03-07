@@ -14,13 +14,13 @@ from field_of_dreams.config import Settings
 logger = logging.getLogger()
 
 
-async def start_game(
+async def create_game(
     update: types.Update,
     bot: bot.TelegramBot,
     mediator: Mediator,
     settings: Settings,
 ):
-    logger.info("start game handler")
+    logger.info("Create game")
     chat_id = update.message.chat.id  # type: ignore
     if bot.get_state(chat_id) not in (states.GameState.FINISHED, None):
         raise ApplicationException("Дождитесь завершения прошлой игры.")
@@ -48,7 +48,7 @@ async def start_game(
         },
     )
     state = states.GameState.PREPARING
-    state.value.set_data({"message_notify": message_notify})
+    state.value.set_data({"message_notify_id": message_notify.message_id})
     bot.set_state(chat_id, state)
     update.message.entities = None  # type: ignore
     await bot.handle_update(update)
@@ -60,10 +60,10 @@ async def wait_players(
     mediator: Mediator,
     settings: Settings,
 ):
-    logger.info("wait players handler")
+    logger.info("Wait players")
     chat_id = update.message.chat.id  # type: ignore
     state = bot.get_state(chat_id)
-    message_notify = state.value.data["message_notify"]  # type: ignore
+    message_notify_id = state.value.data["message_notify_id"]  # type: ignore
     notify_time = settings.bot.players_waiting_time
     message = await bot.send_message(chat_id, f"До начала игры: {notify_time}")
     for i in range(settings.bot.max_turn_time, 0, -1):
@@ -77,7 +77,7 @@ async def wait_players(
         await asyncio.sleep(1)
     await bot.edit_message(
         chat_id,
-        message_notify.message_id,
+        message_notify_id,
         text="Начинаем сбор игроков.",
     )
     await bot.edit_message(
@@ -86,11 +86,33 @@ async def wait_players(
         "Сбор игроков закончен.",
     )
     bot.set_state(chat_id, states.GameState.STARTED)
+    await bot.handle_update(update)
+
+
+async def start_game(
+    update: types.Update,
+    bot: bot.TelegramBot,
+    mediator: Mediator,
+):
+    logger.info("Start game")
+    chat_id = update.message.chat.id  # type: ignore
     try:
         await mediator.send(StartGameCommand(ChatID(chat_id)))
     except ApplicationException as e:
         bot.set_state(chat_id, states.GameState.FINISHED)
         raise e
+    bot.set_state(chat_id, states.GameState.PLAYER_TURN)
+    await bot.handle_update(update)
+
+
+async def player_turn(
+    update: types.Update,
+    bot: bot.TelegramBot,
+    mediator: Mediator,
+):
+    logger.info("Player turn")
+    chat_id = update.message.chat.id  # type: ignore
+    await bot.send_message(chat_id, "Not implemented")
 
 
 async def join_to_game(
@@ -98,7 +120,7 @@ async def join_to_game(
     bot: bot.TelegramBot,
     mediator: Mediator,
 ):
-    logger.info("join to game handler")
+    logger.info("Join to game")
     await mediator.send(
         AddPlayerCommand(
             ChatID(update.callback_query.message.chat.id),  # type: ignore
@@ -120,7 +142,7 @@ def setup_handlers(bot: bot.TelegramBot):
         ],
     )
     bot.add_handler(
-        start_game,
+        create_game,
         [
             filters.GroupFilter(),
             filters.CommandFilter("/game"),
@@ -132,5 +154,21 @@ def setup_handlers(bot: bot.TelegramBot):
             filters.MessageFilter(),
             filters.GroupFilter(),
             filters.StateFilter(states.GameState.PREPARING),
+        ],
+    )
+    bot.add_handler(
+        start_game,
+        [
+            filters.MessageFilter(),
+            filters.GroupFilter(),
+            filters.StateFilter(states.GameState.STARTED),
+        ],
+    )
+    bot.add_handler(
+        player_turn,
+        [
+            filters.MessageFilter(),
+            filters.GroupFilter(),
+            filters.StateFilter(states.GameState.PLAYER_TURN),
         ],
     )

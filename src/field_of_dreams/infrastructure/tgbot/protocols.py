@@ -1,5 +1,5 @@
 from typing import Protocol, Callable, List, Awaitable, Optional
-from .types import Update
+from .types import Update, Message, Chat, User
 
 
 class Filter(Protocol):
@@ -28,8 +28,30 @@ class Bot(Protocol):
         raise NotImplementedError
 
     async def send_message(
-        self, chat_id: int, text: str, reply_markup: Optional[dict] = None
-    ):
+        self,
+        chat_id: int,
+        text: str,
+        reply_markup: Optional[dict] = None,
+        parse_mode: str = "HTML",
+    ) -> Message:
+        raise NotImplementedError
+
+    async def pin_message(self, chat_id: int, message_id: int) -> None:
+        raise NotImplementedError
+
+    async def get_chat(self, chat_id: int) -> Chat:
+        raise NotImplementedError
+
+    async def edit_message(
+        self,
+        chat_id: int,
+        message_id: int,
+        text: str,
+        parse_mode: str = "HTML",
+    ) -> Optional[Message]:
+        raise NotImplementedError
+
+    async def get_me(self) -> User:
         raise NotImplementedError
 
     @property

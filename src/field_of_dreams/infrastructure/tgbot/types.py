@@ -17,6 +17,7 @@ class Chat(BaseModel):
     username: Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]
+    pinned_message: Optional["Message"]
 
 
 class MessageEntity(BaseModel):
@@ -40,7 +41,7 @@ class CallbackQuery(BaseModel):
     data: str
     from_user: Optional[User] = Field(alias="from")
     message: Optional[Message]
-    date:  Optional[int]
+    date: Optional[int]
     chat: Optional[Chat]
 
 
@@ -49,3 +50,9 @@ class Update(BaseModel):
     message: Optional[Message] = None
     callback_query: Optional[CallbackQuery] = None
     state: Optional[Any] = None
+
+    def set_state(self, state: Any):
+        self.state = state
+
+
+Chat.update_forward_refs()

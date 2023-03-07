@@ -28,7 +28,7 @@ pytest-asyncio = "^0.20.3"
 line-length = 79
 
 [tool.flake8]
-exclude = ['.git','__pycache__', '.env', 'venv', 'versions',]
+exclude = ['.git','__pycache__', '.env', 'venv', 'migrations',]
 max-line-length = 79
 max-complexivity = 8
 

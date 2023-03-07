@@ -16,4 +16,5 @@ class GameState(enum.Enum):
     CREATED = GameData(1)
     PREPARING = GameData(2)
     STARTED = GameData(3)
-    FINISHED = GameData(4)
+    PLAYER_TURN = GameData(4)
+    FINISHED = GameData(5)

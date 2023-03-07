@@ -38,9 +38,10 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
         game = await self._game_gateway.get_current_game(command.chat_id)
         if not game:
             raise ApplicationException(
-                """Присоединится к игре невозможно, так как её не существует.
-                Чтобы создать игру введи команду /game.
-                """  # noqa
+                (
+                    "Присоединится к игре невозможно."
+                    "Чтобы создать игру введи команду /game."
+                )
             )
 
         if game and game.is_started:
@@ -49,7 +50,7 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
             )
         try:
             await self._player_gateway.create_player(game.id, user_id)  # type: ignore # noqa
-        except GatewayError as e:
-            print(e)
+        except GatewayError:
+            pass
 
         await self._uow.commit()

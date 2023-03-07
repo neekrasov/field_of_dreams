@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from field_of_dreams.domain.entities.chat import ChatID
 from field_of_dreams.domain.entities.game import GameState
-from field_of_dreams.domain.entities.player_turn import PlayerTurn
 from ..common import Handler, UnitOfWork, ApplicationException
 from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
@@ -34,9 +33,8 @@ class StartGameHandler(Handler[StartGameCommand, None]):
         self._uow = uow
 
     async def execute(self, command: StartGameCommand) -> None:
-        current_game = await self._game_gateway.get_current_game(
-            command.chat_id
-        )
+        chat_id = command.chat_id
+        current_game = await self._game_gateway.get_current_game(chat_id)
         if current_game is None:
             raise ApplicationException("Игра не найдена.")
 
@@ -49,15 +47,14 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             raise ApplicationException(
                 "Количество игроков довольно мало, чтобы начать игру."
             )
-
-        player_turn = PlayerTurn(queue[0].id)  # type: ignore
-        await self._player_turn_gateway.add_player_turn(player_turn)
-
+        turn_id = await self._player_turn_gateway.create_player_turn(
+            queue[0].id  # type: ignore
+        )
+        word = current_game.word
+        word_mask = word.get_mask(current_game.guessed_letters)
         current_game.set_state(GameState.STARTED)
-        first_user = await self._user_gateway.get_user_by_id(queue[0].user_id)
+        current_game.set_turn(turn_id)
         await self._uow.commit()
 
-        await self._view.show_queue(current_game.chat_id, queue)
-        await self._view.notify_first_player_of_turn(
-            current_game.chat_id, first_user
-        )
+        await self._view.pin_word_mask(chat_id, word_mask, word.question)
+        await self._view.show_queue(chat_id, queue)

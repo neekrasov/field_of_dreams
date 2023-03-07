@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import timedelta
 import logging
 
-from field_of_dreams.domain.entities.game import Game
 from field_of_dreams.domain.entities.chat import ChatID
 from field_of_dreams.domain.entities.user import UserID, User
 from ..common import Handler, UnitOfWork, ApplicationException, GatewayError
@@ -45,22 +44,19 @@ class CreateGameHandler(Handler[CreateGameCommand, None]):
             pass
 
         exists = await self._game_gateway.get_current_game(command.chat_id)
-        if exists and not exists.is_created:
+        if exists:
             raise ApplicationException(
                 "Игра уже началась. Дождитесь завершения прошлой игры."
             )
 
         word = await self._word_gateway.get_random_word()
         if word is None:
-            raise ApplicationException("Нет доступных слов")
+            raise ApplicationException("Нет доступных слов.")
 
-        if not exists or exists.is_created:
-            await self._game_gateway.add_game(
-                Game(
-                    chat_id=command.chat_id,
-                    word_id=word.id,  # type: ignore
-                    interval=command.max_turn_time,
-                    author_id=user.id,
-                )
-            )
+        await self._game_gateway.create_game(
+            chat_id=command.chat_id,
+            word_id=word.id,  # type: ignore
+            interval=command.max_turn_time,
+            author_id=user.id,
+        )
         await self._uow.commit()

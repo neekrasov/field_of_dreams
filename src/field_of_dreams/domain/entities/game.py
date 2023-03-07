@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta, datetime
 
 from .chat import ChatID
-from .word import WordID
+from .word import WordID, Word
 from .user import UserID
 
 if TYPE_CHECKING:
@@ -27,17 +27,20 @@ class Game:
     word_id: WordID
     interval: timedelta
     author_id: UserID
-    current_turn_id: Optional["PlayerTurnID"] = None
+    word: Word
 
+    current_turn_id: Optional["PlayerTurnID"] = None
     state: GameState = GameState.CREATED
     guessed_letters: List[str] = field(default_factory=list)
-    failed_letters: List[str] = field(default_factory=list)
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     id: Optional[GameID] = None
 
     def set_state(self, state: GameState):
         self.state = state
+
+    def set_turn(self, turn_id: "PlayerTurnID"):
+        self.current_turn_id = turn_id
 
     @property
     def is_active(self) -> bool:

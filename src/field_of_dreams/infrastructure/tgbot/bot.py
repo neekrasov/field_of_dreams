@@ -1,11 +1,14 @@
 import aiohttp
 import json
+import logging
 from typing import List, Callable, Type, Optional, Dict, Awaitable
 
 from .protocols import Bot, Middleware, Filter
 from .handler import UpdateHandler
 from .states import GameState
-from .types import Update, User, Message
+from .types import Update, User, Message, Chat
+
+logger = logging.getLogger()
 
 
 class TelegramBot(Bot):
@@ -46,12 +49,11 @@ class TelegramBot(Bot):
         return self._states.get(chat_id)
 
     def _set_state_in_update(self, update: Update):
-        if update.callback_query is not None:
-            update.state = self._states.get(  # type: ignore
-                update.callback_query.message.chat.id  # type: ignore
-            )
-        elif update.message is not None:
-            update.state = self._states.get(update.message.chat.id)  # type: ignore  # noqa
+        if callback := update.callback_query:
+            if message := callback.message:
+                update.set_state(self._states.get(message.chat.id))
+        elif message := update.message:
+            update.set_state(self._states.get(message.chat.id))
 
     def add_exception_hander(
         self,
@@ -69,16 +71,23 @@ class TelegramBot(Bot):
                 break
 
     async def send_message(
-        self, chat_id: int, text: str, reply_markup: Optional[dict] = None
-    ):
-        args = [
-            f"{self._url}sendMessage?chat_id={chat_id}&text={text}",
-        ]
+        self,
+        chat_id: int,
+        text: str,
+        reply_markup: Optional[dict] = None,
+        parse_mode: str = "HTML",
+    ) -> Message:
+        url = f"{self._url}sendMessage"
+        params = {
+            "chat_id": chat_id,
+            "text": text,
+        }
         if reply_markup:
-            args.append(f"&reply_markup={json.dumps(reply_markup)}")
-        url = "".join(args)
+            params["reply_markup"] = json.dumps(reply_markup)
+        if parse_mode:
+            params["parse_mode"] = parse_mode
 
-        async with self._session.get(url) as response:
+        async with self._session.get(url, params=params) as response:
             response.raise_for_status()
             data = await response.text()
             return Message(**json.loads(data)["result"])
@@ -90,7 +99,13 @@ class TelegramBot(Bot):
             data = await response.text()
             return User(**json.loads(data)["result"])
 
-    async def edit_message(self, chat_id: int, message_id: int, text: str):
+    async def edit_message(
+        self,
+        chat_id: int,
+        message_id: int,
+        text: str,
+        parse_mode: str = "HTML",
+    ) -> Optional[Message]:
         url = f"{self._url}editMessageText"
         async with self._session.get(
             url,
@@ -98,11 +113,16 @@ class TelegramBot(Bot):
                 "chat_id": chat_id,
                 "message_id": message_id,
                 "text": text,
+                "parse_mode": parse_mode,
             },
         ) as response:
-            response.raise_for_status()
-            data = await response.text()
-            return Message(**json.loads(data)["result"])
+            try:
+                response.raise_for_status()
+                data = await response.text()
+                return Message(**json.loads(data)["result"])
+            except aiohttp.client_exceptions.ClientResponseError as e:
+                logger.info(e)
+            return None
 
     async def answer_callback_query(self, callback_query_id: int, text: str):
         url = f"{self._url}answerCallbackQuery"
@@ -116,6 +136,22 @@ class TelegramBot(Bot):
             response.raise_for_status()
             data = await response.text()
             return json.loads(data)
+
+    async def pin_message(self, chat_id: int, message_id: int) -> None:
+        async with self._session.get(
+            f"{self._url}pinChatMessage",
+            params={"chat_id": chat_id, "message_id": message_id},
+        ) as response:
+            response.raise_for_status()
+            pass
+
+    async def get_chat(self, chat_id: int) -> Chat:
+        async with self._session.get(
+            f"{self._url}getChat", params={"chat_id": chat_id}
+        ) as response:
+            response.raise_for_status()
+            data = await response.text()
+            return Chat(**json.loads(data)["result"])
 
     @property
     def url(self):

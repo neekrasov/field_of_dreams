@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from field_of_dreams.infrastructure.persistence.sqlalchemy import models
+from field_of_dreams.infrastructure.sqlalchemy import models
 from field_of_dreams.config import Settings
 
 settings = Settings()

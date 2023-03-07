@@ -8,13 +8,14 @@ from sqlalchemy import (
     BIGINT,
     Interval,
 )
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from field_of_dreams.domain.entities.game import (
     Game as GameEntity,
     GameState,
 )
 from .base import Base, uuidpk
+from .word import Word
 
 
 class Game(Base, GameEntity):
@@ -38,7 +39,7 @@ class Game(Base, GameEntity):
     )
     interval: Mapped[timedelta] = mapped_column(Interval())
     guessed_letters: Mapped[ARRAY] = mapped_column(ARRAY(CHAR), default=[])
-    failed_letters: Mapped[ARRAY] = mapped_column(ARRAY(CHAR), default=[])
     start_time: Mapped[datetime] = mapped_column(default=datetime.utcnow())
     end_time: Mapped[Optional[datetime]] = mapped_column()
 
+    word: Mapped[Word] = relationship()
