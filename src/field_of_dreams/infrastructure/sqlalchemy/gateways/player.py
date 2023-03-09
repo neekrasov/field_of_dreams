@@ -49,6 +49,7 @@ class PlayerGatewayImpl(SqlalchemyGateway, PlayerGateway):
                 and_(
                     PlayerModel.game_id == game_id,
                     PlayerModel.state == PlayerState.WAITING,
+                    PlayerModel.is_active == True,  # noqa
                     or_(
                         PlayerModel.joined_at > player.joined_at,
                         and_(
@@ -67,7 +68,11 @@ class PlayerGatewayImpl(SqlalchemyGateway, PlayerGateway):
         if not next_player:
             stmt = (
                 select(PlayerModel)
-                .where(PlayerModel.game_id == game_id)
+                .where(
+                    PlayerModel.game_id == game_id,
+                    PlayerModel.is_active == True,  # noqa
+                    PlayerModel.state == PlayerState.WAITING,
+                )
                 .order_by(PlayerModel.joined_at)
                 .limit(1)
             )

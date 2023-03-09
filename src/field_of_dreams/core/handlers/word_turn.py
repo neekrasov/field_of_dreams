@@ -16,15 +16,15 @@ from ..services.score import generate_random_score
 
 
 @dataclass(frozen=True)
-class LetterTurnCommand:
+class WordTurnCommand:
     chat_id: ChatID
     user_id: UserID
-    letter: str
+    word: str
     score_from: int
     score_to: int
 
 
-class LetterTurnHandler(Handler[LetterTurnCommand, None]):
+class WordTurnHandler(Handler[WordTurnCommand, None]):
     def __init__(
         self,
         game_gateway: GameGateway,
@@ -37,11 +37,11 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
         self._game_view = game_view
         self._uow = uow
 
-    async def execute(self, command: LetterTurnCommand) -> None:
+    async def execute(self, command: WordTurnCommand) -> None:
         async with self._uow.pipeline:
             user_id = command.user_id
             chat_id = command.chat_id
-            letter = command.letter
+            word = command.word
 
             current_game = await self._game_gateway.get_current_game(chat_id)
             if not current_game:
@@ -54,58 +54,28 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                     "Не удалось обнаружить текущего игрока."
                 )
 
-            word = current_game.word
-            already_guessed = current_game.check_already_guessed_letter(letter)
-            check_answer = word.check_guess(letter)
-
-            if already_guessed:
-                await self._game_view.already_guessed_letter(
-                    chat_id, letter, player.get_username()
-                )
-            elif check_answer:
-                is_last = word.is_last_letter_remaining(
-                    current_game.guessed_letters
-                )
+            user_word = command.word.strip()
+            word = current_game.word.word
+            if word == user_word:
                 score_per_turn = generate_random_score(
                     command.score_from, command.score_to
                 )
                 player.add_score(score_per_turn)
-                current_game.add_guessed_letter(letter)
-                if is_last:
-                    current_game.finish()
-                    await self._game_view.update_word_mask(
-                        chat_id,
-                        word.get_mask(current_game.guessed_letters),
-                        word.question,
-                    )
-                    await self._game_view.winner_letter(
-                        chat_id,
-                        letter,
-                        player.get_username(),
-                        word.count_letter(letter),
-                        score_per_turn,
-                        player.get_score(),
-                    )
-                else:
-                    await self._game_view.correct_letter(
-                        chat_id,
-                        letter,
-                        word.count_letter(letter),
-                        player.get_username(),
-                        score_per_turn,
-                    )
-                    await self._game_view.update_word_mask(
-                        chat_id,
-                        word.get_mask(current_game.guessed_letters),
-                        word.question,
-                    )
-            else:
-                await self._game_view.wrong_letter(
-                    chat_id, letter, player.get_username()
+                current_game.finish()
+                await self._game_view.notify_of_win_word(
+                    chat_id,
+                    word,
+                    player.get_username(),
+                    score_per_turn,
+                    player.get_score(),
                 )
-
-            player.state = PlayerState.WAITING
-            if not current_game.is_finished():
+            else:
+                await self._game_view.notify_loss_word(
+                    chat_id,
+                    user_word,
+                    player.get_username(),
+                )
+                player.is_active = False
                 next_player = await self._player_gateway.get_next_player(
                     user_id, current_game.id  # type: ignore
                 )
@@ -115,13 +85,9 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
 
             await self._game_gateway.update_game(current_game)
             await self._player_gateway.update_player(player)
-            await self._player_gateway.update_player(
-                current_game.cur_player  # type: ignore
-            )
             await self._uow.commit()
 
             if current_game.is_finished():
-                await self._game_view.unpin_word_mask(chat_id)
                 raise GameOver(
                     (
                         "Игра завершилась! "

@@ -1,5 +1,4 @@
-import random
-from typing import Optional, cast
+from typing import Optional
 from dataclasses import asdict
 from sqlalchemy.sql import func, select
 
@@ -15,12 +14,6 @@ class WordGatewayImpl(SqlalchemyGateway, WordGateway):
         await self._try_flush()
 
     async def get_random_word(self) -> Optional[Word]:
-        total_query = select(func.count()).select_from(WordModel)
-        total_result = await self._session.execute(total_query)
-        total = total_result.scalar()
-        if not total:
-            return None
-        random_id = random.randint(1, total)
-        word_query = select(WordModel).where(WordModel.id == random_id)
-        random_word = await self._session.execute(word_query)
-        return cast(Word, random_word.scalar())
+        stmt = select(WordModel).order_by(func.random()).limit(1)
+        random_word = await self._session.execute(stmt)
+        return random_word.scalars().first()

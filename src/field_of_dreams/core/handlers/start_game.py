@@ -50,5 +50,7 @@ class StartGameHandler(Handler[StartGameCommand, None]):
         current_game.set_current_player(queue[0].id)  # type: ignore
         await self._uow.commit()
 
-        await self._view.pin_word_mask(chat_id, word_mask, word.question)
+        await self._view.send_and_pin_word_mask(
+            chat_id, word_mask, word.question
+        )
         await self._view.show_queue(chat_id, queue)

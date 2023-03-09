@@ -45,6 +45,9 @@ class Bot(Protocol):
     async def pin_message(self, chat_id: int, message_id: int) -> None:
         raise NotImplementedError
 
+    async def unpin_message(self, chat_id: int, message_id: int) -> None:
+        raise NotImplementedError
+
     async def get_chat(self, chat_id: int) -> Chat:
         raise NotImplementedError
 

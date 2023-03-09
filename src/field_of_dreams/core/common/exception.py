@@ -17,3 +17,8 @@ class QueueAccessError(ApplicationException):
 class GameOver(ApplicationException):
     def __init__(self, message: str) -> None:
         super().__init__(message)
+
+
+class PlayerLoss(ApplicationException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)

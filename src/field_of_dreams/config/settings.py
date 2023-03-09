@@ -69,9 +69,11 @@ class Settings:
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)
     admin: AdminSettings = field(init=False, default_factory=AdminSettings)
+    logging_config_path: str = field(init=False)
 
     def __post_init__(self):
         self._read_env()
 
     def _read_env(self):
         self.session_key = os.getenv("SESSION_KEY")
+        self.logging_config_path = os.getenv("LOGGING_CONFIG_PATH")

@@ -39,6 +39,10 @@ from field_of_dreams.core.handlers.idle_turn import (
     IdleTurnCommand,
     IdleTurnHandler,
 )
+from field_of_dreams.core.handlers.word_turn import (
+    WordTurnCommand,
+    WordTurnHandler,
+)
 from .mediator import MediatorImpl, Mediator
 
 
@@ -67,11 +71,7 @@ def build_mediator(
     mediator.bind(
         StartGameCommand,
         StartGameHandler(
-            game_gateway,
-            player_gateway,
-            user_gateway,
-            game_view,
-            uow,
+            game_gateway, player_gateway, user_gateway, game_view, uow
         ),
     )
     mediator.bind(
@@ -87,5 +87,9 @@ def build_mediator(
     )
     mediator.bind(
         IdleTurnCommand, IdleTurnHandler(game_gateway, player_gateway, uow)
+    )
+    mediator.bind(
+        WordTurnCommand,
+        WordTurnHandler(game_gateway, player_gateway, game_view, uow),
     )
     return mediator

@@ -15,9 +15,17 @@ class GameView(Protocol):
     ) -> None:
         raise NotImplementedError
 
-    async def pin_word_mask(
+    async def send_and_pin_word_mask(
         self, chat_id: ChatID, word_mask: str, question: str
     ) -> None:
+        raise NotImplementedError
+
+    async def update_word_mask(
+        self, chat_id: ChatID, word_mask: str, question: str
+    ) -> None:
+        raise NotImplementedError
+
+    async def unpin_word_mask(self, chat_id: ChatID) -> None:
         raise NotImplementedError
 
     async def correct_letter(
@@ -49,4 +57,22 @@ class GameView(Protocol):
         score_per_turn: int,
         total_score: int,
     ) -> None:
+        raise NotImplementedError
+
+    async def notify_of_win_word(
+        self,
+        chat_id: ChatID,
+        word: str,
+        username: str,
+        score_per_turn: int,
+        total_score: int,
+    ):
+        raise NotImplementedError
+
+    async def notify_loss_word(
+        self,
+        chat_id: ChatID,
+        word: str,
+        username: str,
+    ):
         raise NotImplementedError

@@ -46,7 +46,7 @@ async def serve(token: str, timeout: int):
 
 if __name__ == "__main__":
     settings = Settings()
-    logging.config.fileConfig("src/field_of_dreams/config/logging_config.ini")
+    logging.config.fileConfig(settings.logging_config_path.strip())
     try:
         asyncio.run(
             serve(token=settings.bot.token, timeout=settings.bot.timeout)

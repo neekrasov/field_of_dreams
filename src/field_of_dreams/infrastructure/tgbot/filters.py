@@ -56,3 +56,12 @@ class StateFilter(Filter):
             update.state is not None
             and update.state.value.filter_ == self._state.value.filter_
         )
+
+
+class OrCombinedFilter(Filter):
+    def __init__(self, first: Filter, second: Filter) -> None:
+        self._first = first
+        self._second = second
+
+    def filter(self, update: Update):
+        return self._first.filter(update) or self._second.filter(update)

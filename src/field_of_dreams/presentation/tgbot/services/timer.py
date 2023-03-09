@@ -1,34 +1,25 @@
 import asyncio
-from field_of_dreams.infrastructure.tgbot import types, bot
+from typing import Optional
+from field_of_dreams.infrastructure.tgbot import bot
 
 
 def timer(
     seconds: int,
     bot_: bot.Bot,
-    message: types.Message,
     chat_id: int,
-    text: str,
-    expired_text: str,
+    text: Optional[str] = None,
+    expired_text: Optional[str] = None,
 ) -> asyncio.Task:
-    async def start_timer(
-        seconds: int, bot: bot.Bot, message: types.Message, chat_id: int
-    ) -> None:
-        sec = seconds
-        for i in range(sec):
-            if i == sec // 2:
-                sec = i
-                await bot.edit_message(
-                    chat_id,
-                    message.message_id,
-                    text.format(seconds),
-                )
+    async def start_timer() -> None:
+        nonlocal seconds
+        if text:
+            await bot_.send_message(chat_id, text.format(seconds))
+        for i in range(seconds):
+            if i == seconds // 2:
+                seconds = i
             await asyncio.sleep(1)
+        if expired_text:
+            await bot_.send_message(chat_id, expired_text.format(seconds))
 
-        await bot.edit_message(
-            chat_id,
-            message.message_id,
-            expired_text,
-        )
-
-    task = asyncio.create_task(start_timer(seconds, bot_, message, chat_id))
+    task = asyncio.create_task(start_timer())
     return task

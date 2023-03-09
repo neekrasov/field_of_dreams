@@ -147,6 +147,14 @@ class TelegramBot(Bot):
             response.raise_for_status()
             pass
 
+    async def unpin_message(self, chat_id: int, message_id: int) -> None:
+        async with self._session.get(
+            f"{self._url}unpinChatMessage",
+            params={"chat_id": chat_id, "message_id": message_id},
+        ) as response:
+            response.raise_for_status()
+            pass
+
     async def get_chat(self, chat_id: int) -> Chat:
         async with self._session.get(
             f"{self._url}getChat", params={"chat_id": chat_id}
