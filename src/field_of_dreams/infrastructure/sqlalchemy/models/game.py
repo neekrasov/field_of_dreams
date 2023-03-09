@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, List
 from sqlalchemy import (
     Enum,
     ARRAY,
@@ -17,6 +17,9 @@ from field_of_dreams.core.entities.game import (
 from .base import Base, uuidpk
 from .word import Word
 
+if TYPE_CHECKING:
+    from .player import Player
+
 
 class Game(Base, GameEntity):
     __tablename__ = "games"
@@ -32,14 +35,17 @@ class Game(Base, GameEntity):
         BIGINT(), ForeignKey("users.id", ondelete="CASCADE")
     )
     cur_player_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE", use_alter=True)
+        ForeignKey("players.id", ondelete="CASCADE", use_alter=True),
     )
     state: Mapped[Enum] = mapped_column(
-        Enum(GameState), default=GameState.PREPARING
+        Enum(GameState), default=GameState.CREATED
     )
     interval: Mapped[timedelta] = mapped_column(Interval())
-    guessed_letters: Mapped[ARRAY] = mapped_column(ARRAY(CHAR), default=[])
+    guessed_letters: Mapped[List[str]] = mapped_column(ARRAY(CHAR), default=[])
     start_time: Mapped[datetime] = mapped_column(default=datetime.utcnow())
     end_time: Mapped[Optional[datetime]] = mapped_column()
 
     word: Mapped[Word] = relationship()
+    cur_player: Mapped[Optional["Player"]] = relationship(
+        foreign_keys=cur_player_id
+    )

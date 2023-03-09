@@ -10,12 +10,14 @@ class MessageFilter(Filter):
 
 class GroupFilter(Filter):
     def filter(self, update: Update) -> bool:
-        return update.message.chat.type == "group"  # type: ignore
+        group_types = ("group", "supergroup")
+        if msg := update.message:
+            return msg.chat.type in group_types
 
+        if call := update.callback_query:
+            return call.chat is not None and call.chat.type in group_types
 
-class OnChatJoinFilter(Filter):
-    def filter(self, update: Update):
-        return update.message.new_chat_member is not None  # type: ignore
+        return False
 
 
 class CommandFilter(Filter):
@@ -28,8 +30,7 @@ class CommandFilter(Filter):
                 offset = entities[-1].offset
                 length = entities[-1].length
                 if (
-                    update.message.text[offset : offset + length + 1]  # type: ignore # noqa
-                    == self._command
+                    self._command in update.message.text[offset : offset + length + 1]  # type: ignore # noqa
                 ):
                     return True
         return False
@@ -40,7 +41,10 @@ class CallbackQueryFilter(Filter):
         self._data = data
 
     def filter(self, update: Update):
-        return update.callback_query is not None
+        return (
+            update.callback_query is not None
+            and update.callback_query.data == self._data
+        )
 
 
 class StateFilter(Filter):

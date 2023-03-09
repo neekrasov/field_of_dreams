@@ -22,3 +22,6 @@ class GameGateway(Protocol):
 
     async def delete_game(self, game: Game) -> None:
         raise NotImplementedError
+
+    async def update_game(self, game: Game) -> None:
+        raise NotImplementedError

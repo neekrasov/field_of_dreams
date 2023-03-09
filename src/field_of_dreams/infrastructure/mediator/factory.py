@@ -23,6 +23,22 @@ from field_of_dreams.core.handlers.start_game import (
     StartGameHandler,
     StartGameCommand,
 )
+from field_of_dreams.core.handlers.check_user_queue import (
+    CheckUserQueueHandler,
+    CheckUserQueueCommand,
+)
+from field_of_dreams.core.handlers.letter_turn import (
+    LetterTurnCommand,
+    LetterTurnHandler,
+)
+from field_of_dreams.core.handlers.get_current_player import (
+    GetCurrentPlayerCommand,
+    GetCurrentPlayerHandler,
+)
+from field_of_dreams.core.handlers.idle_turn import (
+    IdleTurnCommand,
+    IdleTurnHandler,
+)
 from .mediator import MediatorImpl, Mediator
 
 
@@ -33,7 +49,7 @@ def build_mediator(
     word_gateway: WordGateway,
     player_gateway: PlayerGateway,
     uow: UnitOfWork,
-    view: GameView,
+    game_view: GameView,
 ) -> Mediator:
     mediator = MediatorImpl()
 
@@ -43,7 +59,9 @@ def build_mediator(
     )
     mediator.bind(
         CreateGameCommand,
-        CreateGameHandler(game_gateway, word_gateway, user_gateway, uow),
+        CreateGameHandler(
+            game_gateway, word_gateway, user_gateway, chat_gateway, uow
+        ),
     )
     mediator.bind(JoinToChatCommand, JoinToChatHandler(chat_gateway, uow))
     mediator.bind(
@@ -52,8 +70,22 @@ def build_mediator(
             game_gateway,
             player_gateway,
             user_gateway,
-            view,
+            game_view,
             uow,
         ),
+    )
+    mediator.bind(
+        LetterTurnCommand,
+        LetterTurnHandler(game_gateway, player_gateway, game_view, uow),
+    )
+    mediator.bind(
+        CheckUserQueueCommand,
+        CheckUserQueueHandler(game_gateway, player_gateway, game_view, uow),
+    )
+    mediator.bind(
+        GetCurrentPlayerCommand, GetCurrentPlayerHandler(game_gateway, uow)
+    )
+    mediator.bind(
+        IdleTurnCommand, IdleTurnHandler(game_gateway, player_gateway, uow)
     )
     return mediator

@@ -64,7 +64,6 @@ class TelegramBot(Bot):
 
     async def handle_update(self, update: Update):
         self._set_state_in_update(update)
-
         for handler in self._handlers:
             if all(filter.filter(update) for filter in handler.filters):
                 await handler.handle(update)
@@ -124,13 +123,16 @@ class TelegramBot(Bot):
                 logger.info(e)
             return None
 
-    async def answer_callback_query(self, callback_query_id: int, text: str):
+    async def answer_callback_query(
+        self, callback_query_id: int, text: str, show_alert: bool = True
+    ):
         url = f"{self._url}answerCallbackQuery"
         async with self._session.get(
             url,
             params={
                 "callback_query_id": callback_query_id,
                 "text": text,
+                "show_alert": 1 if show_alert else 0,
             },
         ) as response:
             response.raise_for_status()

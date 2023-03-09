@@ -37,7 +37,9 @@ class Bot(Protocol):
     ) -> Message:
         raise NotImplementedError
 
-    async def answer_callback_query(self, callback_query_id: int, text: str):
+    async def answer_callback_query(
+        self, callback_query_id: int, text: str, show_alert: bool = True
+    ):
         raise NotImplementedError
 
     async def pin_message(self, chat_id: int, message_id: int) -> None:

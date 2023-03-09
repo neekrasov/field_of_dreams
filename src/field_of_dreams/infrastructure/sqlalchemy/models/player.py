@@ -12,14 +12,14 @@ from field_of_dreams.core.entities.player import (
     PlayerState,
     Player as PlayerEntity,
 )
-from .base import Base, uuidpk
+from .base import Base
 from .user import User
 
 
 class Player(Base, PlayerEntity):
     __tablename__ = "players"
 
-    id: Mapped[uuidpk]
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
     game_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE")
     )
@@ -29,9 +29,9 @@ class Player(Base, PlayerEntity):
     state: Mapped[Enum] = mapped_column(
         Enum(PlayerState), default=PlayerState.WAITING
     )
+    score: Mapped[int] = mapped_column(default=0)
     is_active: Mapped[bool] = mapped_column(default=True)
     joined_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
 
     user: Mapped["User"] = relationship()
-
     __table_args__ = (UniqueConstraint("game_id", "user_id"),)

@@ -19,3 +19,34 @@ class GameView(Protocol):
         self, chat_id: ChatID, word_mask: str, question: str
     ) -> None:
         raise NotImplementedError
+
+    async def correct_letter(
+        self,
+        chat_id: ChatID,
+        letter: str,
+        count: int,
+        username: str,
+        score_per_turn: int,
+    ) -> None:
+        raise NotImplementedError
+
+    async def wrong_letter(
+        self, chat_id: ChatID, letter: str, username: str
+    ) -> None:
+        raise NotImplementedError
+
+    async def already_guessed_letter(
+        self, chat_id: ChatID, letter: str, username: str
+    ) -> None:
+        raise NotImplementedError
+
+    async def winner_letter(
+        self,
+        chat_id: ChatID,
+        letter: str,
+        username: str,
+        count: int,
+        score_per_turn: int,
+        total_score: int,
+    ) -> None:
+        raise NotImplementedError

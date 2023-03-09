@@ -9,7 +9,7 @@ from .word import WordID, Word
 from .user import UserID
 
 if TYPE_CHECKING:
-    from .player import PlayerID
+    from .player import PlayerID, Player
 
 GameID = NewType("GameID", uuid.UUID)
 
@@ -29,8 +29,9 @@ class Game:
     author_id: UserID
     word: Word
 
-    cur_player_id: Optional["PlayerID"] = None
     state: GameState = GameState.CREATED
+    cur_player_id: Optional["PlayerID"] = None
+    cur_player: Optional["Player"] = None
     guessed_letters: List[str] = field(default_factory=list)
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
@@ -49,3 +50,27 @@ class Game:
     @property
     def is_created(self) -> bool:
         return self.state == GameState.CREATED
+
+    def add_guessed_letter(self, letter: str):
+        self.guessed_letters.append(letter)
+
+    def check_already_guessed_letter(self, letter: str) -> bool:
+        if letter in self.guessed_letters:
+            return True
+        return False
+
+    def finish(self) -> None:
+        self.state = GameState.FINISHED
+        self.end_time = datetime.utcnow()
+
+    def is_finished(self) -> bool:
+        return self.state == GameState.FINISHED
+
+    def check_user_queue(self, user_id: UserID) -> bool:
+        if self.cur_player:
+            return self.cur_player.user_id == user_id
+        return False
+
+    def set_next_player(self, next_player: "Player") -> None:
+        self.cur_player = next_player
+        self.cur_player_id = next_player.id

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from ..entities.chat import ChatID
 from ..entities.game import GameState
-from ..entities.player import PlayerState
 from ..common import Handler, UnitOfWork, ApplicationException
 from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
@@ -45,7 +44,6 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             raise ApplicationException(
                 "Количество игроков довольно мало, чтобы начать игру."
             )
-        queue[0].set_state(PlayerState.PROCESSING)
         word = current_game.word
         word_mask = word.get_mask(current_game.guessed_letters)
         current_game.set_state(GameState.STARTED)

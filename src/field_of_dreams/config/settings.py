@@ -38,6 +38,9 @@ class BotSettings:
     players_waiting_time: int = field(init=False, default=20)
     max_turn_time: int = field(init=False, default=15)
 
+    random_score_from: int = field(init=False, default=5)
+    random_score_to: int = field(init=False, default=20)
+
     def __post_init__(self):
         self._read_env()
 

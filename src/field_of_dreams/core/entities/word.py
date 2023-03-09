@@ -13,3 +13,15 @@ class Word:
     def get_mask(self, shown_letters: List[str]) -> str:
         shown_letters_set = set(shown_letters)
         return "".join(c if c in shown_letters_set else "_" for c in self.word)
+
+    def check_guess(self, letter: str) -> bool:
+        if letter in self.word:
+            return True
+        return False
+
+    def count_letter(self, letter: str) -> int:
+        return self.word.count(letter)
+
+    def is_last_letter_remaining(self, shown_letters: List[str]):
+        remaining_chars = set(self.word) - set(shown_letters)
+        return len(remaining_chars) == 1

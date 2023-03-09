@@ -21,6 +21,7 @@ class Player:
     user_id: UserID
     user: User
     is_active: bool
+    score: int = 0
     state: PlayerState = PlayerState.WAITING
     id: Optional[PlayerID] = None
     joined_at: Optional[datetime] = None
@@ -30,3 +31,12 @@ class Player:
 
     def set_state(self, state: PlayerState) -> None:
         self.state = state
+
+    def get_user_id(self) -> int:
+        return self.user.id
+
+    def add_score(self, score: int) -> None:
+        self.score += score
+
+    def get_score(self) -> int:
+        return self.score

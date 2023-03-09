@@ -11,7 +11,7 @@ from field_of_dreams.infrastructure.tgbot import TelegramBot, BasePollerImpl
 from middlewares import DIMiddleware
 from views.game import GameView, GameViewImpl
 from handlers.exceptions import application_exception_handler
-from handlers import game, on_chat_join
+from handlers import game, base
 
 logger = logging.getLogger()
 
@@ -33,8 +33,8 @@ async def serve(token: str, timeout: int):
                 GameView,
             ),
         )
+        base.setup_handlers(bot)
         game.setup_handlers(bot)
-        on_chat_join.setup_handlers(bot)
 
     try:
         logger.info("Serve bot")

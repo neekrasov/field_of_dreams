@@ -1,6 +1,6 @@
-from typing import Optional, cast
+from typing import Optional
 from datetime import timedelta
-from sqlalchemy.sql import select, and_, or_
+from sqlalchemy.sql import select, and_, or_, update
 from sqlalchemy.orm import joinedload
 
 from field_of_dreams.core.entities.game import Game, GameState, GameID
@@ -43,10 +43,26 @@ class GameGatewayImpl(SqlalchemyGateway, GameGateway):
                     ),
                 )
             )
-            .options(joinedload(GameModel.word))
+            .options(joinedload("*"))
         )
         result = await self._session.execute(stmt)
-        return cast(Game, result.scalars().first())
+        return result.scalars().first()
+
+    async def update_game(self, game: Game) -> None:
+        await self._session.execute(
+            update(GameModel)
+            .where(GameModel.chat_id == game.chat_id)
+            .values(
+                chat_id=game.chat_id,
+                word_id=game.word_id,
+                interval=game.interval,
+                author_id=game.author_id,
+                state=game.state,
+                cur_player_id=game.cur_player_id,
+                guessed_letters=game.guessed_letters,
+                start_time=game.start_time,
+            )
+        )
 
     async def delete_game(self, game: Game):
         await self._session.delete(game)
