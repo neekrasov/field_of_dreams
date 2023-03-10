@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from functools import partial
 from datetime import timedelta
 
 from field_of_dreams.core.entities.chat import ChatID
@@ -30,7 +31,7 @@ from field_of_dreams.core.handlers.check_user_queue import (
 )
 from field_of_dreams.core.handlers.idle_turn import IdleTurnCommand
 from field_of_dreams.config import Settings
-from services.timer import timer
+from services.timer import create_timer
 from keyboards import game as game_kb
 
 logger = logging.getLogger()
@@ -101,11 +102,8 @@ async def finish(
     await mediator.send(
         FinishGameCommand(ChatID(chat_id), UserID(user_id), is_admin)
     )
-    if state:
-        task = state.value.data.get("task")
-        if task:
-            task.cancel()
-
+    timer = bot.get_or_create_timer(chat_id)
+    timer.del_all()
     bot.set_state(chat_id, states.GameState.FINISHED)
     await bot.send_message(
         chat_id, f"Игра завершена пользователем @{username}"
@@ -126,14 +124,15 @@ async def wait_players(
     else:
         return
 
-    task = timer(
-        settings.bot.players_waiting_time,
-        bot,
-        chat_id,
-        expired_text="❗Сбор игроков закончен.",
+    timer = bot.get_or_create_timer(chat_id)
+    task = timer.run(
+        create_timer(
+            settings.bot.players_waiting_time,
+            bot,
+            chat_id,
+            expired_text="❗Сбор игроков закончен.",
+        )
     )
-    state = bot.get_state(chat_id)
-    state.value.set_data({"task": task})
     await task
     bot.set_state(chat_id, states.GameState.STARTED)
     await bot.handle_update(update)
@@ -167,8 +166,6 @@ async def start_game(
     chat_id = update.message.chat.id  # type: ignore
     try:
         await mediator.send(StartGameCommand(ChatID(chat_id)))
-        state = states.GameState.PLUG
-        bot.set_state(chat_id, state)
         await bot.send_message(
             chat_id,
             (
@@ -176,14 +173,13 @@ async def start_game(
                 f"{settings.bot.question_read_time}"
             ),
         )
-        task = asyncio.create_task(
-            asyncio.sleep(settings.bot.question_read_time)
+        bot.set_state(chat_id, states.GameState.PLUG)
+        timer = bot.get_or_create_timer(chat_id)
+        task = timer.run(
+            partial(asyncio.sleep, delay=settings.bot.question_read_time)
         )
-        state.value.set_data({"task": task})
         await task
-        state = states.GameState.PLAYER_CHOICE
-        state.value.set_data({"task": task})
-        bot.set_state(chat_id, state)
+        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
         await bot.handle_update(update)
     except ApplicationException as e:
         bot.set_state(chat_id, states.GameState.FINISHED)
@@ -231,25 +227,25 @@ async def player_choice(
             ),
             reply_markup=game_kb.only_word_choice(),
         )
-    task = timer(
-        settings.bot.max_turn_time,
-        bot,
-        chat_id,
-        expired_text=(
-            "🕑 Истёк срок ожидания ответа "
-            f"от пользователя {current_player.get_username()}"
-        ),
+
+    timer = bot.get_or_create_timer(chat_id)
+    task = timer.run(
+        create_timer(
+            settings.bot.max_turn_time,
+            bot,
+            chat_id,
+            expired_text=(
+                "🕑 Истёк срок ожидания ответа "
+                f"от пользователя {current_player.get_username()}"
+            ),
+        )
     )
-    state = states.GameState.WAIT_PLAYER_CHOICE
-    state.value.set_data({"task": task})
-    bot.set_state(chat_id, state)
+    bot.set_state(chat_id, states.GameState.WAIT_PLAYER_CHOICE)
     await task
     if not task.cancelled():
         await bot.delete_message(chat_id, message.message_id)
         await mediator.send(IdleTurnCommand(ChatID(chat_id)))
-        state = states.GameState.PLAYER_CHOICE
-        state.value.set_data({"task": task})
-        bot.set_state(chat_id, state)
+        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
         await bot.handle_update(update)
 
 
@@ -263,10 +259,9 @@ async def skip_turn(
     chat_id = update.callback_query.message.chat.id  # type: ignore
     message_id = update.callback_query.message.message_id  # type: ignore
     callback_id = update.callback_query.id  # type: ignore
-    state = bot.get_state(chat_id)
-    task = state.value.data.get("task")
 
-    if task.done() or task.cancelled():
+    timer = bot.get_or_create_timer(chat_id)
+    if timer.all_done():
         await bot.answer_callback_query(
             update.callback_query.id, "🕑 Время выбора закончилось"  # type: ignore # noqa
         )
@@ -275,7 +270,7 @@ async def skip_turn(
     await mediator.send(
         CheckUserQueueCommand(ChatID(chat_id), UserID(user_id))
     )
-    task.cancel()
+    timer.del_all()
     await bot.delete_message(chat_id, message_id)
     await bot.answer_callback_query(
         callback_id, "Ваш ход был принят.", show_alert=False
@@ -303,10 +298,9 @@ async def player_turn(
     user_id = update.callback_query.from_user.id  # type: ignore
     message_id = update.callback_query.message.message_id  # type: ignore
     username = update.callback_query.from_user.username  # type: ignore
-    state = bot.get_state(chat_id)
-    task = state.value.data.get("task")
 
-    if task.done() or task.cancelled():
+    timer = bot.get_or_create_timer(chat_id)
+    if timer.all_done():
         await bot.answer_callback_query(
             update.callback_query.id, "🕑 Время выбора закончилось"  # type: ignore # noqa
         )
@@ -315,29 +309,31 @@ async def player_turn(
     await mediator.send(
         CheckUserQueueCommand(ChatID(chat_id), UserID(user_id))
     )
-    task.cancel()
+    timer.del_all()
 
     await bot.delete_message(chat_id, message_id)
     await bot.answer_callback_query(update.callback_query.id, "Ваш ход был принят.", show_alert=False)  # type: ignore # noqa
 
     options = {"letter": "букву", "word": "слово"}
-    task = timer(
-        settings.bot.max_turn_time,
-        bot,
-        chat_id,
-        text=(
-            f"Игрок @{username} выбирает "
-            f"{options[update.callback_query.data]}... \n"  # type: ignore
-            "🕑 Ограничение по времени (в секундах): {}"
-        ),
-        expired_text=("🕑 Истёк срок ожидания ответа от пользователя"),
+    timer.run(
+        create_timer(
+            settings.bot.max_turn_time,
+            bot,
+            chat_id,
+            text=(
+                f"Игрок @{username} выбирает "
+                f"{options[update.callback_query.data]}... \n"  # type: ignore
+                "🕑 Ограничение по времени (в секундах): {}"
+            ),
+            expired_text=("🕑 Истёк срок ожидания ответа от пользователя"),
+        )
     )
     if update.callback_query.data == "letter":  # type: ignore
         state = states.GameState.PLAYER_LETTER_TURN
     else:
         state = states.GameState.PLAYER_WORD_TURN
 
-    state.value.set_data({"user_id": user_id, "task": task})
+    state.value.set_data({"user_id": user_id})
     bot.set_state(chat_id, state)
 
 
@@ -349,14 +345,14 @@ async def player_word_turn(
 ):
     chat_id = update.message.chat.id  # type: ignore
     user_id = update.message.from_user.id  # type: ignore
+
     state = bot.get_state(chat_id)
     user_id_from_state = state.value.data.get("user_id")
-    task = state.value.data.get("task")
-
-    if user_id_from_state != user_id or task.done():
+    timer = bot.get_or_create_timer(chat_id)
+    if user_id_from_state != user_id or timer.all_done():
         return
 
-    task.cancel()
+    timer.del_all()
     text = update.message.text.lower().strip()  # type: ignore
     if len(text) == 0:
         await mediator.send(IdleTurnCommand(ChatID(chat_id)))
@@ -385,9 +381,8 @@ async def player_letter_turn(
     user_id = update.message.from_user.id  # type: ignore
     state = bot.get_state(chat_id)
     user_id_from_state = state.value.data.get("user_id")
-    task = state.value.data.get("task")
-
-    if user_id_from_state != user_id or task.done():
+    timer = bot.get_or_create_timer(chat_id)
+    if user_id_from_state != user_id or timer.all_done():
         return
 
     is_last: bool = await mediator.send(
@@ -399,7 +394,7 @@ async def player_letter_turn(
         )
         return
 
-    task.cancel()
+    timer.del_all()
     text = update.message.text.lower().strip()  # type: ignore
     err = False
     if len(text) == 0:

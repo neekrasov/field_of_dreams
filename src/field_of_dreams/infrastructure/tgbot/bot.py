@@ -7,6 +7,7 @@ from .protocols import Bot, Middleware, Filter
 from .handler import UpdateHandler
 from .states import GameState
 from .types import Update, User, Message, Chat, ChatMember
+from .timer import Timer
 
 logger = logging.getLogger()
 
@@ -26,6 +27,7 @@ class TelegramBot(Bot):
             Type[Exception], Callable[..., Awaitable]
         ] = {}
         self._states: Dict[int, GameState] = {}
+        self._timers: Dict[int, Timer] = {}
 
     def add_handler(self, handler: Callable, filters: List[Filter]):
         self._handlers.append(
@@ -47,6 +49,20 @@ class TelegramBot(Bot):
 
     def get_state(self, chat_id: int) -> Optional[GameState]:
         return self._states.get(chat_id)
+
+    def get_timer(self, chat_id: int) -> Optional[Timer]:
+        return self._timers.get(chat_id)
+
+    def get_or_create_timer(self, chat_id: int) -> Timer:
+        timer = self.get_timer(chat_id)
+        if not timer:
+            return self.create_timer(chat_id)
+        return timer
+
+    def create_timer(self, chat_id: int) -> Timer:
+        timer = Timer()
+        self._timers[chat_id] = timer
+        return timer
 
     def _set_state_in_update(self, update: Update):
         if callback := update.callback_query:

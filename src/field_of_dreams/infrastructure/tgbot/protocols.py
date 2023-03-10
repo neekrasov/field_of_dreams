@@ -1,6 +1,7 @@
 from typing import Protocol, Callable, List, Awaitable, Optional, Any
 
 from .types import Update, Message, Chat, User, ChatMember
+from .timer import Timer
 
 
 class Filter(Protocol):
@@ -73,6 +74,15 @@ class Bot(Protocol):
         raise NotImplementedError
 
     def set_state(self, chat_id: int, state: Any):
+        raise NotImplementedError
+
+    def get_timer(self, chat_id: int) -> Optional[Timer]:
+        raise NotImplementedError
+
+    def get_or_create_timer(self, chat_id: int) -> Timer:
+        raise NotImplementedError
+
+    def create_timer(self, chat_id: int) -> Timer:
         raise NotImplementedError
 
     @property

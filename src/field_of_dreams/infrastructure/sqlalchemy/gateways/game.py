@@ -36,7 +36,7 @@ class GameGatewayImpl(SqlalchemyGateway, GameGateway):
             .where(
                 and_(
                     GameModel.chat_id == chat_id,
-                    GameModel.state != GameState.FINISHED
+                    GameModel.state != GameState.FINISHED,
                 )
             )
             .options(joinedload("*"))
