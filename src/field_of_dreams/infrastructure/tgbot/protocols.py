@@ -1,6 +1,6 @@
 from typing import Protocol, Callable, List, Awaitable, Optional, Any
 
-from .types import Update, Message, Chat, User
+from .types import Update, Message, Chat, User, ChatMember
 
 
 class Filter(Protocol):
@@ -51,6 +51,9 @@ class Bot(Protocol):
     async def get_chat(self, chat_id: int) -> Chat:
         raise NotImplementedError
 
+    async def delete_message(self, chat_id: int, message_id: int) -> None:
+        raise NotImplementedError
+
     async def edit_message(
         self,
         chat_id: int,
@@ -63,11 +66,14 @@ class Bot(Protocol):
     async def get_me(self) -> User:
         raise NotImplementedError
 
+    async def get_chat_administrators(self, chat_id: int) -> List[ChatMember]:
+        raise NotImplementedError
+
     def get_state(self, chat_id: int) -> Any:
-        pass
+        raise NotImplementedError
 
     def set_state(self, chat_id: int, state: Any):
-        pass
+        raise NotImplementedError
 
     @property
     def url(self):

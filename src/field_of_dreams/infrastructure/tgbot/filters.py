@@ -59,9 +59,11 @@ class StateFilter(Filter):
 
 
 class OrCombinedFilter(Filter):
-    def __init__(self, first: Filter, second: Filter) -> None:
-        self._first = first
-        self._second = second
+    def __init__(self, *filters) -> None:
+        self._filters = filters
 
     def filter(self, update: Update):
-        return self._first.filter(update) or self._second.filter(update)
+        result = False
+        for filter_obj in self._filters:
+            result = result or filter_obj.filter(update)
+        return result

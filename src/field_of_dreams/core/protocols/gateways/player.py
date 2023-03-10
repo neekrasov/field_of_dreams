@@ -13,7 +13,7 @@ class PlayerGateway(Protocol):
         raise NotImplementedError
 
     async def get_next_player(
-        self, user_id: UserID, game_id: GameID
+        self, player: Player, game_id: GameID
     ) -> Optional[Player]:
         raise NotImplementedError
 

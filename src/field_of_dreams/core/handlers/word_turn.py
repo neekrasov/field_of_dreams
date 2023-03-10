@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from ..entities.chat import ChatID
-from ..entities.user import UserID
+from ..entities.game import Game
 from ..entities.player import PlayerState
 from ..common import (
     Handler,
@@ -18,7 +18,6 @@ from ..services.score import generate_random_score
 @dataclass(frozen=True)
 class WordTurnCommand:
     chat_id: ChatID
-    user_id: UserID
     word: str
     score_from: int
     score_to: int
@@ -39,7 +38,6 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
 
     async def execute(self, command: WordTurnCommand) -> None:
         async with self._uow.pipeline:
-            user_id = command.user_id
             chat_id = command.chat_id
             word = command.word
 
@@ -54,8 +52,8 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
                     "Не удалось обнаружить текущего игрока."
                 )
 
-            user_word = command.word.strip()
-            word = current_game.word.word
+            user_word = command.word.strip().lower()
+            word = current_game.word.word.strip().lower()
             if word == user_word:
                 score_per_turn = generate_random_score(
                     command.score_from, command.score_to
@@ -76,22 +74,36 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
                     player.get_username(),
                 )
                 player.is_active = False
+                await self._player_gateway.update_player(player)
                 next_player = await self._player_gateway.get_next_player(
-                    user_id, current_game.id  # type: ignore
+                    player, current_game.id  # type: ignore
                 )
                 if next_player:
                     next_player.state = PlayerState.PROCESSING
                     current_game.set_next_player(next_player)
-
-            await self._game_gateway.update_game(current_game)
-            await self._player_gateway.update_player(player)
-            await self._uow.commit()
+                    await self._player_gateway.update_player(next_player)
+                else:
+                    current_game.finish()
+                    await self._finish(current_game, chat_id)
+                    raise GameOver(
+                        "🫤 Игра завершилась ничьёй,"
+                        "никто не угадал слово... \n"
+                        "Попробуйте ещё раз! /game"
+                    )
 
             if current_game.is_finished():
+                await self._finish(current_game, chat_id)
                 raise GameOver(
                     (
-                        "Игра завершилась! "
+                        "🥳 Игра завершилась! "
                         f"Победитель, {player.get_username()}! \n"
                         "Может ещё раз? /game"
                     )
                 )
+            else:
+                await self._game_gateway.update_game(current_game)
+
+    async def _finish(self, game: Game, chat_id: ChatID):
+        await self._game_view.unpin_word_mask(chat_id)
+        await self._game_gateway.update_game(game)
+        await self._uow.commit()

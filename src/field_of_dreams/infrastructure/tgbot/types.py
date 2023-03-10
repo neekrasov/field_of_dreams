@@ -55,4 +55,9 @@ class Update(BaseModel):
         self.state = state
 
 
+class ChatMember(BaseModel):
+    status: str
+    user: User
+
+
 Chat.update_forward_refs()

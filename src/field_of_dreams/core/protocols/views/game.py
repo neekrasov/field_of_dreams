@@ -10,11 +10,6 @@ class GameView(Protocol):
     ) -> None:
         raise NotImplementedError
 
-    async def notify_first_player_of_turn(
-        self, chat_id: ChatID, player: Player
-    ) -> None:
-        raise NotImplementedError
-
     async def send_and_pin_word_mask(
         self, chat_id: ChatID, word_mask: str, question: str
     ) -> None:

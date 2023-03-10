@@ -43,6 +43,14 @@ from field_of_dreams.core.handlers.word_turn import (
     WordTurnCommand,
     WordTurnHandler,
 )
+from field_of_dreams.core.handlers.finish_game import (
+    FinishGameCommand,
+    FinishGameHandler,
+)
+from field_of_dreams.core.handlers.check_is_last import (
+    CheckLastPlayerCommand,
+    CheckLastPlayerHandler,
+)
 from .mediator import MediatorImpl, Mediator
 
 
@@ -91,5 +99,12 @@ def build_mediator(
     mediator.bind(
         WordTurnCommand,
         WordTurnHandler(game_gateway, player_gateway, game_view, uow),
+    )
+    mediator.bind(
+        FinishGameCommand, FinishGameHandler(game_gateway, game_view, uow)
+    )
+    mediator.bind(
+        CheckLastPlayerCommand,
+        CheckLastPlayerHandler(game_gateway, player_gateway, uow),
     )
     return mediator

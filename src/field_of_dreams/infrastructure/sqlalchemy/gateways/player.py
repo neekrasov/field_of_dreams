@@ -2,10 +2,9 @@ from typing import Sequence, Optional
 from sqlalchemy.sql import select, or_, and_, update
 from sqlalchemy.orm import selectinload
 
-from field_of_dreams.core.common import GatewayError
 from field_of_dreams.core.entities.game import GameID
 from field_of_dreams.core.entities.user import UserID
-from field_of_dreams.core.entities.player import Player, PlayerState
+from field_of_dreams.core.entities.player import Player
 from field_of_dreams.core.protocols.gateways.player import PlayerGateway
 from .base import SqlalchemyGateway
 from ..models import Player as PlayerModel
@@ -20,7 +19,10 @@ class PlayerGatewayImpl(SqlalchemyGateway, PlayerGateway):
     async def get_players(self, game_id: GameID) -> Sequence[Player]:
         stmt = (
             select(PlayerModel)
-            .where(PlayerModel.game_id == game_id)
+            .where(
+                PlayerModel.game_id == game_id,
+                PlayerModel.is_active == True,  # noqa
+            )
             .options(selectinload(PlayerModel.user))
         )
         result = await self._session.execute(stmt)
@@ -28,27 +30,15 @@ class PlayerGatewayImpl(SqlalchemyGateway, PlayerGateway):
         return players
 
     async def get_next_player(
-        self, user_id: UserID, game_id: GameID
+        self, player: Player, game_id: GameID
     ) -> Optional[Player]:
-        player_result = await self._session.execute(
-            select(PlayerModel).where(
-                and_(
-                    PlayerModel.user_id == user_id,
-                    PlayerModel.game_id == game_id,
-                )
-            )
-        )
-        player = player_result.scalars().first()
-        if not player:
-            raise GatewayError("Player not found")
-
         stmt = (
             select(PlayerModel)
             .options(selectinload(PlayerModel.user))
             .where(
                 and_(
+                    PlayerModel.id != player.id,
                     PlayerModel.game_id == game_id,
-                    PlayerModel.state == PlayerState.WAITING,
                     PlayerModel.is_active == True,  # noqa
                     or_(
                         PlayerModel.joined_at > player.joined_at,
@@ -59,7 +49,7 @@ class PlayerGatewayImpl(SqlalchemyGateway, PlayerGateway):
                     ),
                 )
             )
-            .order_by(PlayerModel.joined_at, PlayerModel.id)
+            .order_by(PlayerModel.id, PlayerModel.joined_at)
             .limit(1)
         )
         result = await self._session.execute(stmt)
@@ -69,11 +59,11 @@ class PlayerGatewayImpl(SqlalchemyGateway, PlayerGateway):
             stmt = (
                 select(PlayerModel)
                 .where(
+                    PlayerModel.user_id != player.user_id,
                     PlayerModel.game_id == game_id,
                     PlayerModel.is_active == True,  # noqa
-                    PlayerModel.state == PlayerState.WAITING,
                 )
-                .order_by(PlayerModel.joined_at)
+                .order_by(PlayerModel.id, PlayerModel.joined_at)
                 .limit(1)
             )
             result = await self._session.execute(stmt)

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from ..entities.chat import ChatID
-from ..entities.user import UserID
 from ..entities.player import PlayerState
 from ..common import (
     Handler,
@@ -18,7 +17,6 @@ from ..services.score import generate_random_score
 @dataclass(frozen=True)
 class LetterTurnCommand:
     chat_id: ChatID
-    user_id: UserID
     letter: str
     score_from: int
     score_to: int
@@ -39,7 +37,6 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
 
     async def execute(self, command: LetterTurnCommand) -> None:
         async with self._uow.pipeline:
-            user_id = command.user_id
             chat_id = command.chat_id
             letter = command.letter
 
@@ -107,17 +104,15 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
             player.state = PlayerState.WAITING
             if not current_game.is_finished():
                 next_player = await self._player_gateway.get_next_player(
-                    user_id, current_game.id  # type: ignore
+                    player, current_game.id  # type: ignore
                 )
                 if next_player:
                     next_player.state = PlayerState.PROCESSING
                     current_game.set_next_player(next_player)
+                    await self._player_gateway.update_player(next_player)
 
             await self._game_gateway.update_game(current_game)
             await self._player_gateway.update_player(player)
-            await self._player_gateway.update_player(
-                current_game.cur_player  # type: ignore
-            )
             await self._uow.commit()
 
             if current_game.is_finished():

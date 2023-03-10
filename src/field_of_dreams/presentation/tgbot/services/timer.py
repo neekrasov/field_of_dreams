@@ -14,10 +14,7 @@ def timer(
         nonlocal seconds
         if text:
             await bot_.send_message(chat_id, text.format(seconds))
-        for i in range(seconds):
-            if i == seconds // 2:
-                seconds = i
-            await asyncio.sleep(1)
+        await asyncio.sleep(seconds)
         if expired_text:
             await bot_.send_message(chat_id, expired_text.format(seconds))
 

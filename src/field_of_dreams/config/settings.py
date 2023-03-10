@@ -37,7 +37,7 @@ class BotSettings:
     timeout: int = field(init=False)
     players_waiting_time: int = field(init=False, default=20)
     max_turn_time: int = field(init=False, default=15)
-
+    question_read_time: int = field(init=False, default=15)
     random_score_from: int = field(init=False, default=5)
     random_score_to: int = field(init=False, default=20)
 
@@ -46,7 +46,11 @@ class BotSettings:
 
     def _read_env(self):
         self.token = os.getenv("BOT_TOKEN")
-        self.timeout = os.getenv("BOT_TIMEOUT")
+        self.timeout = int(os.getenv("BOT_TIMEOUT"))
+        self.max_turn_time = int(os.getenv("BOT_MAX_TURN_TIME"))
+        self.question_read_time = int(os.getenv("BOT_QUESTION_READ_TIME"))
+        self.random_score_from = int(os.getenv("BOT_RANDOM_SCORE_FROM"))
+        self.random_score_to = int(os.getenv("BOT_RANDOM_SCORE_TO"))
 
 
 @dataclass
@@ -65,7 +69,6 @@ class AdminSettings:
 @dataclass
 class Settings:
     session_key: str = field(init=False)
-
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)
     admin: AdminSettings = field(init=False, default_factory=AdminSettings)

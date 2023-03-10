@@ -15,7 +15,7 @@ class Word:
         return "".join(c if c in shown_letters_set else "_" for c in self.word)
 
     def check_guess(self, letter: str) -> bool:
-        if letter in self.word:
+        if letter.lower() in self.word.lower():
             return True
         return False
 

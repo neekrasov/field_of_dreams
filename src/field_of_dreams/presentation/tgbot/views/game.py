@@ -24,13 +24,6 @@ class GameViewImpl(GameView):
         )
         await self._bot.send_message(chat_id, f"Текущая очередь:{players}")
 
-    async def notify_first_player_of_turn(
-        self, chat_id: ChatID, player: Player
-    ) -> None:
-        await self._bot.send_message(
-            chat_id, f"Первый пользователь: @{player.get_username()}"
-        )
-
     async def send_and_pin_word_mask(
         self, chat_id: ChatID, word_mask: str, question: str
     ) -> None:
@@ -81,9 +74,9 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"@{username} угадал букву '{letter}'!\n"
-                f"Начислено баллов за ход: {score_per_turn}.\n"
-                f"Количество открытых позиций: {count}."
+                f"🎯 @{username} угадал букву '{letter}'!\n"
+                f"🫰 Начислено баллов за ход: {score_per_turn}.\n"
+                f"👀 Количество открытых позиций: {count}."
             ),
         )
 
@@ -92,7 +85,7 @@ class GameViewImpl(GameView):
     ) -> None:
         await self._bot.send_message(
             chat_id,
-            text=f"@{username} буква '{letter}' не встречается в слове :(",
+            text=f"🤔 @{username} буква '{letter}' не встречается в слове :(",
         )
 
     async def already_guessed_letter(
@@ -101,7 +94,7 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"@{username} букву '{letter}' уже угадал другой игрок. \n"
+                f"🥱 @{username} букву '{letter}' уже угадал другой игрок. \n"
                 "Будьте внимательнее!"
             ),
         )
@@ -118,10 +111,10 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"@{username} угадал последнюю букву '{letter}'!\n"
-                f"Начислено баллов за ход: {score_per_turn}.\n"
-                f"Буква встречалась {count} раз.\n"
-                f"Всего набрано баллов за игру: {total_score}."
+                f"🥳 @{username} угадал последнюю букву '{letter}'!\n"
+                f"🫰 Начислено баллов за ход: {score_per_turn}.\n"
+                f"👀 Буква встречалась {count} раз.\n"
+                f"📈 Всего набрано баллов за игру: {total_score}."
             ),
         )
 
@@ -136,9 +129,9 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"@{username} угадал слово '{word}'!\n"
-                f"Начислено баллов за ход: {score_per_turn}.\n"
-                f"Всего набрано баллов за игру: {total_score}."
+                f"🥳 @{username} угадал слово '{word}'!\n"
+                f"🫰 Начислено баллов за ход: {score_per_turn}.\n"
+                f"📈 Всего набрано баллов за игру: {total_score}."
             ),
         )
 
@@ -151,9 +144,10 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"@{username}, к сожалению '{word}'"
+                f"😔 @{username}, к сожалению '{word}' "
                 "не является загаданным словом :(\n"
-                "И ты выбываешь из игры,"
-                "не расстраивайся, в следующий раз обязательно получиться!"
+                "🗣 Ты выбываешь из игры. "
+                "Не расстраивайся, в следующий раз "
+                "обязательно получится угадать!"
             ),
         )

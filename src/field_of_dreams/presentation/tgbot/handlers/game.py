@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import timedelta
 
@@ -13,14 +14,14 @@ from field_of_dreams.infrastructure.tgbot import (
 from field_of_dreams.core.common import (
     ApplicationException,
     Mediator,
-    QueueAccessError,
-    GameOver,
 )
 from field_of_dreams.core.handlers.create_game import CreateGameCommand
 from field_of_dreams.core.handlers.add_player import AddPlayerCommand
 from field_of_dreams.core.handlers.start_game import StartGameCommand
 from field_of_dreams.core.handlers.letter_turn import LetterTurnCommand
 from field_of_dreams.core.handlers.word_turn import WordTurnCommand
+from field_of_dreams.core.handlers.finish_game import FinishGameCommand
+from field_of_dreams.core.handlers.check_is_last import CheckLastPlayerCommand
 from field_of_dreams.core.handlers.get_current_player import (
     GetCurrentPlayerCommand,
 )
@@ -30,6 +31,7 @@ from field_of_dreams.core.handlers.check_user_queue import (
 from field_of_dreams.core.handlers.idle_turn import IdleTurnCommand
 from field_of_dreams.config import Settings
 from services.timer import timer
+from keyboards import game as game_kb
 
 logger = logging.getLogger()
 
@@ -43,7 +45,6 @@ async def create_game(
     logger.info("Create game")
     chat_id = update.message.chat.id  # type: ignore
     if bot.get_state(chat_id) not in (states.GameState.FINISHED, None):
-        bot.set_state(chat_id, states.GameState.PLUG)
         return
 
     await mediator.send(
@@ -60,6 +61,8 @@ async def create_game(
             [
                 "Начинаем сбор игроков.",
                 "Чтобы присоединится к игре нажмите на кнопку.",
+                "\n🕑 Время ожидания (в секундах): "
+                f"{settings.bot.max_turn_time}",
             ]
         ),
         reply_markup={
@@ -71,6 +74,42 @@ async def create_game(
     bot.set_state(chat_id, states.GameState.PREPARING)
     update.message.entities = None  # type: ignore
     await bot.handle_update(update)
+
+
+async def finish(
+    update: types.Update,
+    bot: protocols.Bot,
+    mediator: Mediator,
+    settings: Settings,
+):
+    logger.info("Finish game")
+    chat_id = update.message.chat.id  # type: ignore
+    state = bot.get_state(chat_id)
+    if state == states.GameState.FINISHED:
+        await bot.send_message(chat_id, "Игра уже завершена.")
+        return
+
+    user_id = update.message.from_user.id  # type: ignore
+    username = update.message.from_user.username  # type: ignore
+    admins = await bot.get_chat_administrators(chat_id)
+    is_admin = False
+    for admin in admins:
+        if admin.user.id == user_id:
+            is_admin = True
+            break
+
+    await mediator.send(
+        FinishGameCommand(ChatID(chat_id), UserID(user_id), is_admin)
+    )
+    if state:
+        task = state.value.data.get("task")
+        if task:
+            task.cancel()
+
+    bot.set_state(chat_id, states.GameState.FINISHED)
+    await bot.send_message(
+        chat_id, f"Игра завершена пользователем @{username}"
+    )
 
 
 async def wait_players(
@@ -91,8 +130,10 @@ async def wait_players(
         settings.bot.players_waiting_time,
         bot,
         chat_id,
-        expired_text="Сбор игроков закончен.",
+        expired_text="❗Сбор игроков закончен.",
     )
+    state = bot.get_state(chat_id)
+    state.value.set_data({"task": task})
     await task
     bot.set_state(chat_id, states.GameState.STARTED)
     await bot.handle_update(update)
@@ -120,12 +161,29 @@ async def start_game(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
+    settings: Settings,
 ):
     logger.info("Start game")
     chat_id = update.message.chat.id  # type: ignore
     try:
         await mediator.send(StartGameCommand(ChatID(chat_id)))
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        state = states.GameState.PLUG
+        bot.set_state(chat_id, state)
+        await bot.send_message(
+            chat_id,
+            (
+                "🕑❗ Время на прочтение условия: "
+                f"{settings.bot.question_read_time}"
+            ),
+        )
+        task = asyncio.create_task(
+            asyncio.sleep(settings.bot.question_read_time)
+        )
+        state.value.set_data({"task": task})
+        await task
+        state = states.GameState.PLAYER_CHOICE
+        state.value.set_data({"task": task})
+        bot.set_state(chat_id, state)
         await bot.handle_update(update)
     except ApplicationException as e:
         bot.set_state(chat_id, states.GameState.FINISHED)
@@ -144,38 +202,51 @@ async def player_choice(
     else:
         chat_id = update.callback_query.message.chat.id  # type: ignore
 
+    bot.set_state(chat_id, states.GameState.PLUG)
+
     current_player: Player = await mediator.send(
         GetCurrentPlayerCommand(ChatID(chat_id))
     )
-
-    await bot.send_message(
-        chat_id,
-        f"@{current_player.get_username()} что вы будете угадывать?",
-        reply_markup={
-            "inline_keyboard": [
-                [
-                    {"text": "Букву", "callback_data": "letter"},
-                    {"text": "Слово", "callback_data": "word"},
-                ],
-                [{"text": "Пропустить ход", "callback_data": "skip"}],
-            ]
-        },
+    is_last: bool = await mediator.send(
+        CheckLastPlayerCommand(ChatID(chat_id))
     )
+    if not is_last:
+        message = await bot.send_message(
+            chat_id,
+            (
+                f"@{current_player.get_username()} что вы будете угадывать?"
+                "\n🕑 Ограничение по времени хода: "
+                f"{settings.bot.max_turn_time}"
+            ),
+            reply_markup=game_kb.choice_letter_or_word(),
+        )
+    else:
+        message = await bot.send_message(
+            chat_id,
+            (
+                f"@{current_player.get_username()}, вы остались последним, "
+                "вам доступен только выбор слова."
+                "\n🕑 Ограничение по времени хода: "
+                f"{settings.bot.max_turn_time}"
+            ),
+            reply_markup=game_kb.only_word_choice(),
+        )
     task = timer(
         settings.bot.max_turn_time,
         bot,
         chat_id,
-        text=("Ожидание хода игрока... \n" "Время хода (в секундах): {}"),
-        expired_text=("Истёк срок ожидания ответа от пользователя"),
+        expired_text=(
+            "🕑 Истёк срок ожидания ответа "
+            f"от пользователя {current_player.get_username()}"
+        ),
     )
     state = states.GameState.WAIT_PLAYER_CHOICE
     state.value.set_data({"task": task})
     bot.set_state(chat_id, state)
     await task
     if not task.cancelled():
-        await mediator.send(
-            IdleTurnCommand(ChatID(chat_id), current_player.user_id)
-        )
+        await bot.delete_message(chat_id, message.message_id)
+        await mediator.send(IdleTurnCommand(ChatID(chat_id)))
         state = states.GameState.PLAYER_CHOICE
         state.value.set_data({"task": task})
         bot.set_state(chat_id, state)
@@ -190,36 +261,32 @@ async def skip_turn(
     logger.info("Skip Turn")
     user_id = update.callback_query.from_user.id  # type: ignore
     chat_id = update.callback_query.message.chat.id  # type: ignore
+    message_id = update.callback_query.message.message_id  # type: ignore
     callback_id = update.callback_query.id  # type: ignore
     state = bot.get_state(chat_id)
     task = state.value.data.get("task")
 
     if task.done() or task.cancelled():
         await bot.answer_callback_query(
-            update.callback_query.id, "Время выбора закончилось"  # type: ignore # noqa
+            update.callback_query.id, "🕑 Время выбора закончилось"  # type: ignore # noqa
         )
         return
 
-    try:
-        await mediator.send(
-            CheckUserQueueCommand(ChatID(chat_id), UserID(user_id))
-        )
-    except QueueAccessError as e:
-        await bot.answer_callback_query(update.callback_query.id, e.message)  # type: ignore # noqa
-        return
+    await mediator.send(
+        CheckUserQueueCommand(ChatID(chat_id), UserID(user_id))
+    )
     task.cancel()
-
+    await bot.delete_message(chat_id, message_id)
     await bot.answer_callback_query(
         callback_id, "Ваш ход был принят.", show_alert=False
     )
     current_player: Player = await mediator.send(
         GetCurrentPlayerCommand(ChatID(chat_id))
     )
-    await mediator.send(
-        IdleTurnCommand(ChatID(chat_id), current_player.user_id)
-    )
+    await mediator.send(IdleTurnCommand(ChatID(chat_id)))
     await bot.send_message(
-        chat_id, f"@{current_player.get_username()} решил пропустить ход."
+        chat_id,
+        f"@{current_player.get_username()} решил пропустить ход. 🚶‍♂️",
     )
     bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
     await bot.handle_update(update)
@@ -234,33 +301,36 @@ async def player_turn(
     logger.info("Turning letter")
     chat_id = update.callback_query.message.chat.id  # type: ignore
     user_id = update.callback_query.from_user.id  # type: ignore
+    message_id = update.callback_query.message.message_id  # type: ignore
     username = update.callback_query.from_user.username  # type: ignore
     state = bot.get_state(chat_id)
     task = state.value.data.get("task")
 
     if task.done() or task.cancelled():
         await bot.answer_callback_query(
-            update.callback_query.id, "Время выбора закончилось"  # type: ignore # noqa
+            update.callback_query.id, "🕑 Время выбора закончилось"  # type: ignore # noqa
         )
         return
 
-    try:
-        await mediator.send(
-            CheckUserQueueCommand(ChatID(chat_id), UserID(user_id))
-        )
-        task.cancel()
-    except QueueAccessError as e:
-        await bot.answer_callback_query(update.callback_query.id, e.message)  # type: ignore # noqa
-        return
+    await mediator.send(
+        CheckUserQueueCommand(ChatID(chat_id), UserID(user_id))
+    )
+    task.cancel()
 
+    await bot.delete_message(chat_id, message_id)
     await bot.answer_callback_query(update.callback_query.id, "Ваш ход был принят.", show_alert=False)  # type: ignore # noqa
 
+    options = {"letter": "букву", "word": "слово"}
     task = timer(
         settings.bot.max_turn_time,
         bot,
         chat_id,
-        text=(f"Ожидание хода игрока @{username}... \n" "Осталось секунд: {}"),
-        expired_text=("Истёк срок ожидания ответа от пользователя"),
+        text=(
+            f"Игрок @{username} выбирает "
+            f"{options[update.callback_query.data]}... \n"  # type: ignore
+            "🕑 Ограничение по времени (в секундах): {}"
+        ),
+        expired_text=("🕑 Истёк срок ожидания ответа от пользователя"),
     )
     if update.callback_query.data == "letter":  # type: ignore
         state = states.GameState.PLAYER_LETTER_TURN
@@ -289,25 +359,20 @@ async def player_word_turn(
     task.cancel()
     text = update.message.text.lower().strip()  # type: ignore
     if len(text) == 0:
-        await mediator.send(IdleTurnCommand(ChatID(chat_id), UserID(user_id)))
+        await mediator.send(IdleTurnCommand(ChatID(chat_id)))
         bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
         await bot.handle_update(update)
 
-    try:
-        await mediator.send(
-            WordTurnCommand(
-                ChatID(chat_id),
-                UserID(user_id),
-                text,
-                settings.bot.random_score_from,
-                settings.bot.random_score_to,
-            )
+    await mediator.send(
+        WordTurnCommand(
+            ChatID(chat_id),
+            text,
+            settings.bot.random_score_from,
+            settings.bot.random_score_to,
         )
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
-        await bot.handle_update(update)
-    except GameOver as e:
-        await bot.send_message(chat_id, e.message)
-        bot.set_state(chat_id, states.GameState.FINISHED)
+    )
+    bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+    await bot.handle_update(update)
 
 
 async def player_letter_turn(
@@ -325,6 +390,15 @@ async def player_letter_turn(
     if user_id_from_state != user_id or task.done():
         return
 
+    is_last: bool = await mediator.send(
+        CheckLastPlayerCommand(ChatID(chat_id))
+    )
+    if is_last:
+        await bot.answer_callback_query(
+            update.callback_query.id, "Вам доступен только выбор слова."  # type: ignore # noqa
+        )
+        return
+
     task.cancel()
     text = update.message.text.lower().strip()  # type: ignore
     err = False
@@ -335,35 +409,37 @@ async def player_letter_turn(
         await bot.send_message(
             chat_id,
             (
-                "Длина ответа при выборе буквы не может превышать 1 символ. \n"
-                "Правила игры - /help"
+                "🫣 Длина ответа при выборе буквы "
+                "не может превышать 1 символ."
             ),
         )
 
     if err:
-        await mediator.send(IdleTurnCommand(ChatID(chat_id), UserID(user_id)))
+        await mediator.send(IdleTurnCommand(ChatID(chat_id)))
         bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
         await bot.handle_update(update)
         return
 
-    try:
-        await mediator.send(
-            LetterTurnCommand(
-                ChatID(chat_id),
-                UserID(user_id),
-                text,
-                settings.bot.random_score_from,
-                settings.bot.random_score_to,
-            )
+    await mediator.send(
+        LetterTurnCommand(
+            ChatID(chat_id),
+            text,
+            settings.bot.random_score_from,
+            settings.bot.random_score_to,
         )
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
-        await bot.handle_update(update)
-    except GameOver as e:
-        await bot.send_message(chat_id, e.message)
-        bot.set_state(chat_id, states.GameState.FINISHED)
+    )
+    bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+    await bot.handle_update(update)
 
 
 def setup_handlers(bot: protocols.Bot):
+    bot.add_handler(
+        finish,
+        [
+            filters.GroupFilter(),
+            filters.CommandFilter("/finish"),
+        ],
+    )
     bot.add_handler(
         join_to_game,
         [

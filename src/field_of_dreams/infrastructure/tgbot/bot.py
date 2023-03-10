@@ -6,7 +6,7 @@ from typing import List, Callable, Type, Optional, Dict, Awaitable
 from .protocols import Bot, Middleware, Filter
 from .handler import UpdateHandler
 from .states import GameState
-from .types import Update, User, Message, Chat
+from .types import Update, User, Message, Chat, ChatMember
 
 logger = logging.getLogger()
 
@@ -98,6 +98,18 @@ class TelegramBot(Bot):
             data = await response.text()
             return User(**json.loads(data)["result"])
 
+    async def get_chat_administrators(self, chat_id: int) -> List[ChatMember]:
+        url = f"{self._url}getChatAdministrators"
+        async with self._session.get(
+            url, params={"chat_id": chat_id}
+        ) as response:
+            response.raise_for_status()
+            data = await response.text()
+            members = json.loads(data)["result"]
+            if not members:
+                return []
+            return [ChatMember(**member) for member in members]
+
     async def edit_message(
         self,
         chat_id: int,
@@ -143,16 +155,21 @@ class TelegramBot(Bot):
         async with self._session.get(
             f"{self._url}pinChatMessage",
             params={"chat_id": chat_id, "message_id": message_id},
-        ) as response:
-            response.raise_for_status()
+        ):
             pass
 
     async def unpin_message(self, chat_id: int, message_id: int) -> None:
         async with self._session.get(
             f"{self._url}unpinChatMessage",
             params={"chat_id": chat_id, "message_id": message_id},
-        ) as response:
-            response.raise_for_status()
+        ):
+            pass
+
+    async def delete_message(self, chat_id: int, message_id: int) -> None:
+        async with self._session.get(
+            f"{self._url}deleteMessage",
+            params={"chat_id": chat_id, "message_id": message_id},
+        ):
             pass
 
     async def get_chat(self, chat_id: int) -> Chat:
