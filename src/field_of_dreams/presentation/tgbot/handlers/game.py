@@ -34,7 +34,7 @@ from field_of_dreams.config import Settings
 from services.timer import create_timer
 from keyboards import game as game_kb
 
-logger = logging.getLogger()
+logger = logging.getLogger("bot")
 
 
 async def create_game(

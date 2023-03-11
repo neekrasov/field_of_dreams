@@ -67,16 +67,30 @@ class AdminSettings:
 
 
 @dataclass
-class Settings:
+class APISettings:
+    admin: AdminSettings = field(init=False, default_factory=AdminSettings)
     session_key: str = field(init=False)
+    host: str = field(init=False)
+    port: int = field(init=False)
+
+    def __post_init__(self):
+        self._read_env()
+
+    def _read_env(self):
+        self.session_key = os.getenv("API_SESSION_KEY")
+        self.host = os.getenv("API_HOST")
+        self.port = os.getenv("API_PORT")
+
+
+@dataclass
+class Settings:
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)
-    admin: AdminSettings = field(init=False, default_factory=AdminSettings)
+    api: APISettings = field(init=False, default_factory=APISettings)
     logging_config_path: str = field(init=False)
 
     def __post_init__(self):
         self._read_env()
 
     def _read_env(self):
-        self.session_key = os.getenv("SESSION_KEY")
         self.logging_config_path = os.getenv("LOGGING_CONFIG_PATH")

@@ -1,4 +1,9 @@
+import inspect
+import aiohttp
+import typing
+from aiohttp.web import Request
 from dataclasses import dataclass
+from di.api.dependencies import DependentBase
 from di import Container, bind_by_type
 from di.dependent import Dependent
 from sqlalchemy.ext.asyncio import (
@@ -7,6 +12,12 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
+from field_of_dreams.infrastructure.tgbot import TelegramBot, BasePollerImpl
+from field_of_dreams.infrastructure.tgbot.protocols import Bot, Poller
+from field_of_dreams.presentation.tgbot.views.game import (
+    GameView,
+    GameViewImpl,
+)
 from field_of_dreams.core.common import UnitOfWork, Mediator
 from field_of_dreams.core.protocols.gateways import (
     ChatGateway,
@@ -42,6 +53,7 @@ class DIScope:
 
 def build_container() -> Container:
     container = Container()
+    container.bind(match_request)
     container.bind(
         bind_by_type(
             Dependent(lambda *args: Settings(), scope=DIScope.APP), Settings
@@ -49,6 +61,7 @@ def build_container() -> Container:
     )
     build_sa(container)
     build_gateways(container)
+    build_tg(container)
     container.bind(
         bind_by_type(
             Dependent(build_mediator, scope=DIScope.REQUEST), Mediator
@@ -107,3 +120,52 @@ def build_sa(container: Container) -> None:
             Dependent(build_sa_session, scope=DIScope.REQUEST), AsyncSession
         )
     )
+
+
+def build_telegram_bot(
+    settings: Settings, session: aiohttp.ClientSession
+) -> Bot:
+    bot = TelegramBot(session, settings.bot.token)
+    return bot
+
+
+def build_poller(
+    bot: Bot, settings: Settings, session: aiohttp.ClientSession
+) -> Poller:
+    poller = BasePollerImpl(session, bot, settings.bot.timeout)
+    return poller
+
+
+def build_view(bot: Bot) -> GameView:
+    return GameViewImpl(bot)
+
+
+def build_tg(container: Container):
+    container.bind(
+        bind_by_type(
+            Dependent(build_telegram_bot, scope=DIScope.APP),
+            Bot,
+        )
+    )
+    container.bind(
+        bind_by_type(
+            Dependent(build_poller, scope=DIScope.APP),
+            Poller,
+        )
+    )
+    container.bind(
+        bind_by_type(
+            Dependent(build_view, scope=DIScope.APP),
+            GameView,
+        ),
+    )
+
+
+# Fix params for aiohttp-apispec
+def match_request(
+    param: typing.Optional[inspect.Parameter],
+    dependent: DependentBase[typing.Any],
+) -> typing.Optional[DependentBase[typing.Any]]:
+    if param is not None and param.name in ("_", "request"):
+        return Dependent(Request, scope=DIScope.REQUEST)
+    return None

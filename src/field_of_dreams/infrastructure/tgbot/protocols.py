@@ -1,4 +1,4 @@
-from typing import Protocol, Callable, List, Awaitable, Optional, Any
+from typing import Protocol, Callable, List, Awaitable, Optional, Any, Type
 
 from .types import Update, Message, Chat, User, ChatMember
 from .timer import Timer
@@ -85,11 +85,21 @@ class Bot(Protocol):
     def create_timer(self, chat_id: int) -> Timer:
         raise NotImplementedError
 
+    def add_exception_hander(
+        self,
+        exception_type: Type[Exception],
+        handler: Callable[..., Awaitable],
+    ):
+        raise NotImplementedError
+
     @property
     def url(self):
         raise NotImplementedError
 
 
 class Poller(Protocol):
-    async def start_polling(self, bot: Bot):
+    async def start_polling(self):
+        raise NotImplementedError
+
+    async def stop(self):
         raise NotImplementedError

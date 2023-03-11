@@ -33,7 +33,5 @@ class DIMiddleware(Middleware):
                 request_state,
                 values={
                     Update: update,
-                    Callable[..., Awaitable]: handler,  # type: ignore
-                    Bot: self._bot,
                 },
             )

@@ -7,7 +7,7 @@ from field_of_dreams.core.common.exception import (
     QueueAccessError,
 )
 
-logger = logging.getLogger()
+logger = logging.getLogger("bot")
 
 
 async def application_exception_handler(
