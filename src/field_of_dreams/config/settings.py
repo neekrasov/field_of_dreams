@@ -40,6 +40,7 @@ class BotSettings:
     question_read_time: int = field(init=False, default=15)
     random_score_from: int = field(init=False, default=5)
     random_score_to: int = field(init=False, default=20)
+    word_score_to: int = field(init=False, default=40)
 
     def __post_init__(self):
         self._read_env()
@@ -49,8 +50,10 @@ class BotSettings:
         self.timeout = int(os.getenv("BOT_TIMEOUT"))
         self.max_turn_time = int(os.getenv("BOT_MAX_TURN_TIME"))
         self.question_read_time = int(os.getenv("BOT_QUESTION_READ_TIME"))
+        self.players_waiting_time = int(os.getenv("BOT_PLAYERS_WAITING_TIME"))
         self.random_score_from = int(os.getenv("BOT_RANDOM_SCORE_FROM"))
         self.random_score_to = int(os.getenv("BOT_RANDOM_SCORE_TO"))
+        self.word_score_to = int(os.getenv("BOT_WORD_SCORE_TO"))
 
 
 @dataclass

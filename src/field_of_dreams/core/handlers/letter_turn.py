@@ -10,6 +10,7 @@ from ..common import (
 )
 from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
+from ..protocols.gateways.user_stats import UserStatsGateway
 from ..protocols.views.game import GameView
 from ..services.score import generate_random_score
 
@@ -18,8 +19,6 @@ from ..services.score import generate_random_score
 class LetterTurnCommand:
     chat_id: ChatID
     letter: str
-    score_from: int
-    score_to: int
 
 
 class LetterTurnHandler(Handler[LetterTurnCommand, None]):
@@ -28,12 +27,18 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
         game_gateway: GameGateway,
         player_gateway: PlayerGateway,
         game_view: GameView,
+        stats_gateway: UserStatsGateway,
         uow: UnitOfWork,
+        score_from: int,
+        score_to: int,
     ) -> None:
         self._game_gateway = game_gateway
         self._player_gateway = player_gateway
         self._game_view = game_view
+        self._stats_gateway = stats_gateway
         self._uow = uow
+        self._score_from = score_from
+        self._score_to = score_to
 
     async def execute(self, command: LetterTurnCommand) -> None:
         async with self._uow.pipeline:
@@ -52,23 +57,31 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 )
 
             word = current_game.word
-            already_guessed = current_game.check_already_guessed_letter(letter)
-            check_answer = word.check_guess(letter)
-
-            if already_guessed:
-                await self._game_view.already_guessed_letter(
-                    chat_id, letter, player.get_username()
+            if letter.isnumeric():
+                await self._game_view.dont_support_numeric(
+                    chat_id, player.username
                 )
-            elif check_answer:
+            elif current_game.check_already_guessed_letter(letter):
+                await self._game_view.already_guessed_letter(
+                    chat_id, letter, player.username
+                )
+            elif word.check_guess(letter):
                 is_last = word.is_last_letter_remaining(
                     current_game.guessed_letters
                 )
                 score_per_turn = generate_random_score(
-                    command.score_from, command.score_to
+                    self._score_from, self._score_to
                 )
                 player.add_score(score_per_turn)
                 current_game.add_guessed_letter(letter)
                 if is_last:
+                    stats = await self._stats_gateway.get_user_stats(
+                        chat_id, player.user_id
+                    )
+                    stats.total_score += score_per_turn
+                    stats.wins += 1
+                    await self._stats_gateway.update_stats(stats)
+
                     current_game.finish()
                     await self._game_view.update_word_mask(
                         chat_id,
@@ -78,7 +91,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                     await self._game_view.winner_letter(
                         chat_id,
                         letter,
-                        player.get_username(),
+                        player.username,
                         word.count_letter(letter),
                         score_per_turn,
                         player.get_score(),
@@ -88,7 +101,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                         chat_id,
                         letter,
                         word.count_letter(letter),
-                        player.get_username(),
+                        player.username,
                         score_per_turn,
                     )
                     await self._game_view.update_word_mask(
@@ -98,7 +111,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                     )
             else:
                 await self._game_view.wrong_letter(
-                    chat_id, letter, player.get_username()
+                    chat_id, letter, player.username
                 )
 
             player.state = PlayerState.WAITING
@@ -120,7 +133,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 raise GameOver(
                     (
                         "Игра завершилась! "
-                        f"Победитель, {player.get_username()}! \n"
+                        f"Победитель, {player.username}! \n"
                         "Может ещё раз? /game"
                     )
                 )

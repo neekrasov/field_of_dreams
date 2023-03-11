@@ -23,7 +23,6 @@ class CheckLastPlayerHandler(Handler[CheckLastPlayerCommand, bool]):
         self._uow = uow
 
     async def execute(self, command: CheckLastPlayerCommand) -> bool:
-        chat_id = command.chat_id
-        current_game = await self._game_gateway.get_current_game(chat_id)  # type: ignore # noqa
+        current_game = await self._game_gateway.get_current_game(command.chat_id)  # type: ignore # noqa
         players = await self._player_gateway.get_players(current_game.id)  # type: ignore # noqa
         return len(players) == 1

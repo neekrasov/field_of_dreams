@@ -26,14 +26,12 @@ class Player:
     id: Optional[PlayerID] = None
     joined_at: Optional[datetime] = None
 
-    def get_username(self) -> str:
+    @property
+    def username(self) -> str:
         return self.user.name
 
     def set_state(self, state: PlayerState) -> None:
         self.state = state
-
-    def get_user_id(self) -> int:
-        return self.user.id
 
     def add_score(self, score: int) -> None:
         self.score += score

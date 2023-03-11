@@ -1,5 +1,4 @@
 import asyncio
-import aiohttp
 import logging.config
 from di.dependent import Dependent
 from di.executors import AsyncExecutor
@@ -17,14 +16,13 @@ from field_of_dreams.infrastructure.di.container import (
     build_poller,
 )
 from middlewares import DIMiddleware
-from handlers import game, base, exceptions as exc
+from handlers import game, base, exc, stats
 
-logger = logging.getLogger("bot")
+logger = logging.getLogger()
 
 
 async def serve():
     container = build_container()
-    session = aiohttp.ClientSession()
     di_scopes = [DIScope.APP, DIScope.REQUEST]
     bot_solved = container.solve(
         Dependent(build_telegram_bot, scope=DIScope.APP),
@@ -34,13 +32,12 @@ async def serve():
         Dependent(build_poller, scope=DIScope.APP),
         scopes=di_scopes,
     )
+    executor = AsyncExecutor()
     async with container.enter_scope(DIScope.APP) as di_state:
-        bot = await bot_solved.execute_async(
-            AsyncExecutor(), di_state, values={aiohttp.ClientSession: session}
-        )
-        poller = await poller_solved.execute_async(
-            AsyncExecutor(), di_state, values={aiohttp.ClientSession: session}
-        )
+        bot = await bot_solved.execute_async(executor, di_state)
+        poller = await poller_solved.execute_async(executor, di_state)
+
+        bot.add_middleware(DIMiddleware(container, di_state, bot))
 
         bot.add_exception_hander(GameOver, exc.game_over_exception_handler)
         bot.add_exception_hander(
@@ -49,9 +46,10 @@ async def serve():
         bot.add_exception_hander(
             QueueAccessError, exc.queue_access_exception_handler
         )
-        bot.add_middleware(DIMiddleware(container, di_state, bot))
+
         base.setup_handlers(bot)
         game.setup_handlers(bot)
+        stats.setup_handlers(bot)
 
         try:
             logger.info("Serve bot")

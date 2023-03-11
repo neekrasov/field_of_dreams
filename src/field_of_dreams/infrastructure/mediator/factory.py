@@ -3,6 +3,7 @@ from field_of_dreams.core.protocols.gateways.chat import ChatGateway
 from field_of_dreams.core.protocols.gateways.game import GameGateway
 from field_of_dreams.core.protocols.gateways.user import UserGateway
 from field_of_dreams.core.protocols.gateways.word import WordGateway
+from field_of_dreams.core.protocols.gateways.user_stats import UserStatsGateway
 from field_of_dreams.core.protocols.gateways.player import (
     PlayerGateway,
 )
@@ -51,7 +52,12 @@ from field_of_dreams.core.handlers.check_is_last import (
     CheckLastPlayerCommand,
     CheckLastPlayerHandler,
 )
+from field_of_dreams.core.handlers.get_chat_stats import (
+    GetChatStatsCommand,
+    GetChatStatsHandler,
+)
 from .mediator import MediatorImpl, Mediator
+from field_of_dreams.config import Settings
 
 
 def build_mediator(
@@ -60,14 +66,18 @@ def build_mediator(
     user_gateway: UserGateway,
     word_gateway: WordGateway,
     player_gateway: PlayerGateway,
+    stats_gateway: UserStatsGateway,
     uow: UnitOfWork,
     game_view: GameView,
+    settings: Settings,
 ) -> Mediator:
     mediator = MediatorImpl()
 
     mediator.bind(
         AddPlayerCommand,
-        AddPlayerHandler(player_gateway, user_gateway, game_gateway, uow),
+        AddPlayerHandler(
+            player_gateway, user_gateway, game_gateway, stats_gateway, uow
+        ),
     )
     mediator.bind(
         CreateGameCommand,
@@ -84,7 +94,15 @@ def build_mediator(
     )
     mediator.bind(
         LetterTurnCommand,
-        LetterTurnHandler(game_gateway, player_gateway, game_view, uow),
+        LetterTurnHandler(
+            game_gateway,
+            player_gateway,
+            game_view,
+            stats_gateway,
+            uow,
+            settings.bot.random_score_from,
+            settings.bot.random_score_to,
+        ),
     )
     mediator.bind(
         CheckUserQueueCommand,
@@ -98,7 +116,15 @@ def build_mediator(
     )
     mediator.bind(
         WordTurnCommand,
-        WordTurnHandler(game_gateway, player_gateway, game_view, uow),
+        WordTurnHandler(
+            game_gateway,
+            player_gateway,
+            game_view,
+            stats_gateway,
+            uow,
+            settings.bot.random_score_from,
+            settings.bot.word_score_to,
+        ),
     )
     mediator.bind(
         FinishGameCommand, FinishGameHandler(game_gateway, game_view, uow)
@@ -106,5 +132,9 @@ def build_mediator(
     mediator.bind(
         CheckLastPlayerCommand,
         CheckLastPlayerHandler(game_gateway, player_gateway, uow),
+    )
+    mediator.bind(
+        GetChatStatsCommand,
+        GetChatStatsHandler(chat_gateway, stats_gateway, game_view, uow),
     )
     return mediator

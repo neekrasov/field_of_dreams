@@ -11,6 +11,7 @@ from ..common import (
 )
 from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
+from ..protocols.gateways.user_stats import UserStatsGateway
 from ..protocols.views.game import GameView
 from ..services.score import generate_random_score
 
@@ -19,8 +20,6 @@ from ..services.score import generate_random_score
 class WordTurnCommand:
     chat_id: ChatID
     word: str
-    score_from: int
-    score_to: int
 
 
 class WordTurnHandler(Handler[WordTurnCommand, None]):
@@ -29,17 +28,22 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
         game_gateway: GameGateway,
         player_gateway: PlayerGateway,
         game_view: GameView,
+        stats_gateway: UserStatsGateway,
         uow: UnitOfWork,
+        score_from: int,
+        score_to: int,
     ) -> None:
         self._game_gateway = game_gateway
         self._player_gateway = player_gateway
         self._game_view = game_view
+        self._stats_gateway = stats_gateway
         self._uow = uow
+        self._score_from = score_from
+        self._score_to = score_to
 
     async def execute(self, command: WordTurnCommand) -> None:
         async with self._uow.pipeline:
             chat_id = command.chat_id
-            word = command.word
 
             current_game = await self._game_gateway.get_current_game(chat_id)
             if not current_game:
@@ -54,25 +58,39 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
 
             user_word = command.word.strip().lower()
             word = current_game.word.word.strip().lower()
+
             if word == user_word:
                 score_per_turn = generate_random_score(
-                    command.score_from, command.score_to
+                    self._score_from, self._score_to
                 )
                 player.add_score(score_per_turn)
                 current_game.finish()
+
+                stats = await self._stats_gateway.get_user_stats(
+                    chat_id, player.user_id
+                )
+                stats.total_score += player.get_score()
+                stats.wins += 1
+                await self._stats_gateway.update_stats(stats)
+
                 await self._game_view.notify_of_win_word(
                     chat_id,
                     word,
-                    player.get_username(),
+                    player.username,
                     score_per_turn,
                     player.get_score(),
                 )
             else:
-                await self._game_view.notify_loss_word(
-                    chat_id,
-                    user_word,
-                    player.get_username(),
-                )
+                if user_word.isnumeric():
+                    await self._game_view.dont_support_numeric(
+                        chat_id, player.username
+                    )
+                else:
+                    await self._game_view.notify_loss_word(
+                        chat_id,
+                        user_word,
+                        player.username,
+                    )
                 player.is_active = False
                 await self._player_gateway.update_player(player)
                 next_player = await self._player_gateway.get_next_player(
@@ -96,7 +114,7 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
                 raise GameOver(
                     (
                         "🥳 Игра завершилась! "
-                        f"Победитель, {player.get_username()}! \n"
+                        f"Победитель, {player.username}! \n"
                         "Может ещё раз? /game"
                     )
                 )

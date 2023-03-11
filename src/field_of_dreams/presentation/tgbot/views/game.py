@@ -3,6 +3,7 @@ from functools import partial
 
 from field_of_dreams.core.entities.player import Player
 from field_of_dreams.core.entities.chat import ChatID
+from field_of_dreams.core.entities.user_stats import UserStats
 from field_of_dreams.core.protocols.views.game import GameView
 from field_of_dreams.infrastructure.tgbot.protocols import Bot
 
@@ -18,11 +19,11 @@ class GameViewImpl(GameView):
     ) -> None:
         players = " ".join(
             [
-                f"\n{index+1}. {player.get_username()}"
+                f"\n{index+1}. {player.username}"
                 for index, player in enumerate(queue)
             ]
         )
-        await self._bot.send_message(chat_id, f"Текущая очередь:{players}")
+        await self._bot.send_message(chat_id, f"Текущая очередь 👀:{players}")
 
     async def send_and_pin_word_mask(
         self, chat_id: ChatID, word_mask: str, question: str
@@ -125,7 +126,7 @@ class GameViewImpl(GameView):
         username: str,
         score_per_turn: int,
         total_score: int,
-    ):
+    ) -> None:
         await self._bot.send_message(
             chat_id,
             text=(
@@ -140,7 +141,7 @@ class GameViewImpl(GameView):
         chat_id: ChatID,
         word: str,
         username: str,
-    ):
+    ) -> None:
         await self._bot.send_message(
             chat_id,
             text=(
@@ -150,4 +151,46 @@ class GameViewImpl(GameView):
                 "Не расстраивайся, в следующий раз "
                 "обязательно получится угадать!"
             ),
+        )
+
+    async def empty_stats(self, chat_id: ChatID) -> None:
+        await self._bot.send_message(
+            chat_id,
+            text=(
+                "В этом чате не проводилось ещё не одной игры 🫤 \n"
+                "Начните игру! /game"
+            ),
+        )
+
+    async def show_stats(
+        self, chat_id: ChatID, stats: Sequence[UserStats]
+    ) -> None:
+        statistics = " ".join(
+            [
+                (
+                    f"\n{index+1}. {stat.user.name} "
+                    f"побед: {stat.wins} очков: {stat.total_score}"
+                )
+                for index, stat in enumerate(stats)
+            ]
+        )
+        await self._bot.send_message(
+            chat_id, text=f"📈 Топ игроков:{statistics}"
+        )
+
+    async def empty_stats_chat_not_exists(self, chat_id: ChatID):
+        await self._bot.send_message(
+            chat_id,
+            text=(
+                "Статистики пока что нет🫤"
+                "Для начала познакомьтесь со мной - /start"
+                "И начите игру - /game"
+            ),
+        )
+
+    async def dont_support_numeric(
+        self, chat_id: ChatID, username: str
+    ) -> None:
+        await self._bot.send_message(
+            chat_id, text=(f"@{username} слова не могут состоять из чисел 🙄")
         )

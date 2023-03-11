@@ -2,6 +2,7 @@ from typing import Protocol, Sequence
 
 from field_of_dreams.core.entities.chat import ChatID
 from field_of_dreams.core.entities.player import Player
+from field_of_dreams.core.entities.user_stats import UserStats
 
 
 class GameView(Protocol):
@@ -61,7 +62,7 @@ class GameView(Protocol):
         username: str,
         score_per_turn: int,
         total_score: int,
-    ):
+    ) -> None:
         raise NotImplementedError
 
     async def notify_loss_word(
@@ -69,5 +70,21 @@ class GameView(Protocol):
         chat_id: ChatID,
         word: str,
         username: str,
-    ):
+    ) -> None:
+        raise NotImplementedError
+
+    async def empty_stats(self, chat_id: ChatID) -> None:
+        raise NotImplementedError
+
+    async def show_stats(
+        self, chat_id: ChatID, stats: Sequence[UserStats]
+    ) -> None:
+        raise NotImplementedError
+
+    async def empty_stats_chat_not_exists(self, chat_id: ChatID):
+        raise NotImplementedError
+
+    async def dont_support_numeric(
+        self, chat_id: ChatID, username: str
+    ) -> None:
         raise NotImplementedError

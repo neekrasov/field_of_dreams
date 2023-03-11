@@ -44,5 +44,5 @@ class CheckUserQueueHandler(Handler[CheckUserQueueCommand, None]):
         check_user = current_game.check_user_queue(user_id)
         if not check_user:
             raise QueueAccessError(
-                f"Очередь пользователя {current_game.cur_player.get_username()}"  # type: ignore # noqa
+                f"Очередь пользователя {current_game.cur_player.username}"  # type: ignore # noqa
             )

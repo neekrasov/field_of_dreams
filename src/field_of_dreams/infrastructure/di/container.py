@@ -11,12 +11,15 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     async_sessionmaker,
 )
-
-from field_of_dreams.infrastructure.tgbot import TelegramBot, BasePollerImpl
 from field_of_dreams.infrastructure.tgbot.protocols import Bot, Poller
 from field_of_dreams.presentation.tgbot.views.game import (
     GameView,
     GameViewImpl,
+)
+from field_of_dreams.infrastructure.tgbot.factory import (
+    build_telegram_bot,
+    build_poller,
+    build_client_session,
 )
 from field_of_dreams.core.common import UnitOfWork, Mediator
 from field_of_dreams.core.protocols.gateways import (
@@ -25,6 +28,7 @@ from field_of_dreams.core.protocols.gateways import (
     UserGateway,
     WordGateway,
     PlayerGateway,
+    UserStatsGateway,
 )
 from field_of_dreams.infrastructure.sqlalchemy.gateways import (
     ChatGatewayImpl,
@@ -32,6 +36,7 @@ from field_of_dreams.infrastructure.sqlalchemy.gateways import (
     PlayerGatewayImpl,
     UserGatewayImpl,
     WordGatewayImpl,
+    UserStatsGatewayImpl,
 )
 from field_of_dreams.infrastructure.sqlalchemy.uow import (
     UnitOfWorkImpl,
@@ -101,6 +106,12 @@ def build_gateways(container: Container) -> None:
             Dependent(UnitOfWorkImpl, scope=DIScope.REQUEST), UnitOfWork
         )
     )
+    container.bind(
+        bind_by_type(
+            Dependent(UserStatsGatewayImpl, scope=DIScope.REQUEST),
+            UserStatsGateway,
+        )
+    )
 
 
 def build_sa(container: Container) -> None:
@@ -122,25 +133,13 @@ def build_sa(container: Container) -> None:
     )
 
 
-def build_telegram_bot(
-    settings: Settings, session: aiohttp.ClientSession
-) -> Bot:
-    bot = TelegramBot(session, settings.bot.token)
-    return bot
-
-
-def build_poller(
-    bot: Bot, settings: Settings, session: aiohttp.ClientSession
-) -> Poller:
-    poller = BasePollerImpl(session, bot, settings.bot.timeout)
-    return poller
-
-
-def build_view(bot: Bot) -> GameView:
-    return GameViewImpl(bot)
-
-
 def build_tg(container: Container):
+    container.bind(
+        bind_by_type(
+            Dependent(build_client_session, scope=DIScope.APP),
+            aiohttp.ClientSession,
+        )
+    )
     container.bind(
         bind_by_type(
             Dependent(build_telegram_bot, scope=DIScope.APP),
@@ -155,13 +154,13 @@ def build_tg(container: Container):
     )
     container.bind(
         bind_by_type(
-            Dependent(build_view, scope=DIScope.APP),
+            Dependent(GameViewImpl, scope=DIScope.APP),
             GameView,
         ),
     )
 
 
-# Fix params for aiohttp-apispec
+# Fix params for aiohttp-apispec for view no types
 def match_request(
     param: typing.Optional[inspect.Parameter],
     dependent: DependentBase[typing.Any],

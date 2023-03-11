@@ -12,10 +12,7 @@ from field_of_dreams.infrastructure.tgbot import (
     protocols,
     states,
 )
-from field_of_dreams.core.common import (
-    ApplicationException,
-    Mediator,
-)
+from field_of_dreams.core.common import ApplicationException, Mediator
 from field_of_dreams.core.handlers.create_game import CreateGameCommand
 from field_of_dreams.core.handlers.add_player import AddPlayerCommand
 from field_of_dreams.core.handlers.start_game import StartGameCommand
@@ -23,18 +20,18 @@ from field_of_dreams.core.handlers.letter_turn import LetterTurnCommand
 from field_of_dreams.core.handlers.word_turn import WordTurnCommand
 from field_of_dreams.core.handlers.finish_game import FinishGameCommand
 from field_of_dreams.core.handlers.check_is_last import CheckLastPlayerCommand
+from field_of_dreams.core.handlers.idle_turn import IdleTurnCommand
 from field_of_dreams.core.handlers.get_current_player import (
     GetCurrentPlayerCommand,
 )
 from field_of_dreams.core.handlers.check_user_queue import (
     CheckUserQueueCommand,
 )
-from field_of_dreams.core.handlers.idle_turn import IdleTurnCommand
 from field_of_dreams.config import Settings
 from services.timer import create_timer
 from keyboards import game as game_kb
 
-logger = logging.getLogger("bot")
+logger = logging.getLogger()
 
 
 async def create_game(
@@ -63,7 +60,7 @@ async def create_game(
                 "Начинаем сбор игроков.",
                 "Чтобы присоединится к игре нажмите на кнопку.",
                 "\n🕑 Время ожидания (в секундах): "
-                f"{settings.bot.max_turn_time}",
+                f"{settings.bot.players_waiting_time}",
             ]
         ),
         reply_markup={
@@ -81,7 +78,6 @@ async def finish(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
-    settings: Settings,
 ):
     logger.info("Finish game")
     chat_id = update.message.chat.id  # type: ignore
@@ -164,6 +160,7 @@ async def start_game(
 ):
     logger.info("Start game")
     chat_id = update.message.chat.id  # type: ignore
+    bot.set_state(chat_id, states.GameState.PLUG)
     try:
         await mediator.send(StartGameCommand(ChatID(chat_id)))
         await bot.send_message(
@@ -173,7 +170,6 @@ async def start_game(
                 f"{settings.bot.question_read_time}"
             ),
         )
-        bot.set_state(chat_id, states.GameState.PLUG)
         timer = bot.get_or_create_timer(chat_id)
         task = timer.run(
             partial(asyncio.sleep, delay=settings.bot.question_read_time)
@@ -210,7 +206,7 @@ async def player_choice(
         message = await bot.send_message(
             chat_id,
             (
-                f"@{current_player.get_username()} что вы будете угадывать?"
+                f"@{current_player.username} что вы будете угадывать?"
                 "\n🕑 Ограничение по времени хода: "
                 f"{settings.bot.max_turn_time}"
             ),
@@ -220,7 +216,7 @@ async def player_choice(
         message = await bot.send_message(
             chat_id,
             (
-                f"@{current_player.get_username()}, вы остались последним, "
+                f"@{current_player.username}, вы остались последним, "
                 "вам доступен только выбор слова."
                 "\n🕑 Ограничение по времени хода: "
                 f"{settings.bot.max_turn_time}"
@@ -236,7 +232,7 @@ async def player_choice(
             chat_id,
             expired_text=(
                 "🕑 Истёк срок ожидания ответа "
-                f"от пользователя {current_player.get_username()}"
+                f"от пользователя {current_player.username}"
             ),
         )
     )
@@ -263,7 +259,7 @@ async def skip_turn(
     timer = bot.get_or_create_timer(chat_id)
     if timer.all_done():
         await bot.answer_callback_query(
-            update.callback_query.id, "🕑 Время выбора закончилось"  # type: ignore # noqa
+            callback_id, "🕑 Время выбора закончилось"  # type: ignore # noqa
         )
         return
 
@@ -281,7 +277,7 @@ async def skip_turn(
     await mediator.send(IdleTurnCommand(ChatID(chat_id)))
     await bot.send_message(
         chat_id,
-        f"@{current_player.get_username()} решил пропустить ход. 🚶‍♂️",
+        f"@{current_player.username} решил пропустить ход. 🚶‍♂️",
     )
     bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
     await bot.handle_update(update)
@@ -298,12 +294,11 @@ async def player_turn(
     user_id = update.callback_query.from_user.id  # type: ignore
     message_id = update.callback_query.message.message_id  # type: ignore
     username = update.callback_query.from_user.username  # type: ignore
+    call_id = update.callback_query.id  # type: ignore
 
     timer = bot.get_or_create_timer(chat_id)
     if timer.all_done():
-        await bot.answer_callback_query(
-            update.callback_query.id, "🕑 Время выбора закончилось"  # type: ignore # noqa
-        )
+        await bot.answer_callback_query(call_id, "🕑 Время выбора закончилось")
         return
 
     await mediator.send(
@@ -312,7 +307,9 @@ async def player_turn(
     timer.del_all()
 
     await bot.delete_message(chat_id, message_id)
-    await bot.answer_callback_query(update.callback_query.id, "Ваш ход был принят.", show_alert=False)  # type: ignore # noqa
+    await bot.answer_callback_query(
+        call_id, "Ваш ход был принят.", show_alert=False
+    )
 
     options = {"letter": "букву", "word": "слово"}
     timer.run(
@@ -341,7 +338,6 @@ async def player_word_turn(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
-    settings: Settings,
 ):
     chat_id = update.message.chat.id  # type: ignore
     user_id = update.message.from_user.id  # type: ignore
@@ -359,14 +355,7 @@ async def player_word_turn(
         bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
         await bot.handle_update(update)
 
-    await mediator.send(
-        WordTurnCommand(
-            ChatID(chat_id),
-            text,
-            settings.bot.random_score_from,
-            settings.bot.random_score_to,
-        )
-    )
+    await mediator.send(WordTurnCommand(ChatID(chat_id), text))
     bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
     await bot.handle_update(update)
 
@@ -375,7 +364,6 @@ async def player_letter_turn(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
-    settings: Settings,
 ):
     chat_id = update.message.chat.id  # type: ignore
     user_id = update.message.from_user.id  # type: ignore
@@ -415,14 +403,7 @@ async def player_letter_turn(
         await bot.handle_update(update)
         return
 
-    await mediator.send(
-        LetterTurnCommand(
-            ChatID(chat_id),
-            text,
-            settings.bot.random_score_from,
-            settings.bot.random_score_to,
-        )
-    )
+    await mediator.send(LetterTurnCommand(ChatID(chat_id), text))
     bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
     await bot.handle_update(update)
 

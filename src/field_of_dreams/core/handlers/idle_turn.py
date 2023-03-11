@@ -57,7 +57,7 @@ class IdleTurnHandler(Handler[IdleTurnCommand, None]):
                 await self._uow.commit()
                 raise GameOver(
                     (
-                        f"🫤 {player.get_username()} решил пропустить ход. \n"
+                        f"🫤 {player.username} решил пропустить ход. \n"
                         "Игра завершилась ничьёй, никто не угадал слово... \n"
                         "Попробуйте ещё раз! /game"
                     )
