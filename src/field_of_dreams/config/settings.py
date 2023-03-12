@@ -70,6 +70,32 @@ class AdminSettings:
 
 
 @dataclass
+class RabbitMQSettings:
+    username: str = field(init=False)
+    password: str = field(init=False)
+    host: str = field(init=False)
+    port: int = field(init=False)
+    queue: str = field(init=False)
+    url: str = field(init=False)
+
+    def __post_init__(self):
+        self._read_env()
+
+    def _read_env(self):
+        self.username = os.getenv("RABBIT_USERNAME")
+        self.password = os.getenv("RABBIT_PASSWORD")
+        self.host = os.getenv("RABBIT_HOST")
+        self.port = os.getenv("RABBIT_PORT")
+        self.queue = os.getenv("RABBIT_QUEUE")
+        self.url = "amqp://{username}:{password}@{host}:{port}/".format(
+            username=self.username,
+            password=self.password,
+            host=self.host,
+            port=self.port
+        )
+
+
+@dataclass
 class APISettings:
     admin: AdminSettings = field(init=False, default_factory=AdminSettings)
     session_key: str = field(init=False)
@@ -92,6 +118,9 @@ class Settings:
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)
     api: APISettings = field(init=False, default_factory=APISettings)
+    rabbit: RabbitMQSettings = field(
+        init=False, default_factory=RabbitMQSettings
+    )
     logging_config_path: str = field(init=False)
 
     def __post_init__(self):

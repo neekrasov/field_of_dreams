@@ -18,7 +18,6 @@ from field_of_dreams.presentation.tgbot.views.game import (
 )
 from field_of_dreams.infrastructure.tgbot.factory import (
     build_telegram_bot,
-    build_poller,
     build_client_session,
 )
 from field_of_dreams.core.common import UnitOfWork, Mediator
@@ -49,6 +48,7 @@ from field_of_dreams.infrastructure.sqlalchemy.factories import (
     build_sa_session,
     build_sa_engine,
 )
+from field_of_dreams.infrastructure.rabbitmq.factory import build_rabbit_poller
 from field_of_dreams.config import Settings
 from ..mediator import build_mediator
 
@@ -162,7 +162,7 @@ def build_tg(container: Container):
     )
     container.bind(
         bind_by_type(
-            Dependent(build_poller, scope=DIScope.APP),
+            Dependent(build_rabbit_poller, scope=DIScope.APP),
             Poller,
         )
     )

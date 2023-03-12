@@ -13,8 +13,9 @@ from field_of_dreams.infrastructure.di.container import (
     DIScope,
     build_container,
     build_telegram_bot,
-    build_poller,
+    # build_poller,
 )
+from field_of_dreams.infrastructure.rabbitmq.factory import build_rabbit_poller
 from middlewares import DIMiddleware
 from handlers import game, base, exc, stats
 
@@ -29,7 +30,7 @@ async def serve():
         scopes=di_scopes,
     )
     poller_solved = container.solve(
-        Dependent(build_poller, scope=DIScope.APP),
+        Dependent(build_rabbit_poller, scope=DIScope.APP),
         scopes=di_scopes,
     )
     executor = AsyncExecutor()
