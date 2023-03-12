@@ -1,10 +1,9 @@
 from aiohttp.web import (
     Response,
     RouteTableDef,
-    HTTPForbidden,
-    HTTPUnauthorized,
+    HTTPForbidden
 )
-from aiohttp_apispec import request_schema, response_schema
+from aiohttp_apispec import request_schema, response_schema, docs
 from aiohttp_session import new_session, get_session
 
 from field_of_dreams.core.common import Mediator, InvalidCredentials
@@ -15,11 +14,13 @@ from field_of_dreams.core.handlers.get_admin_by_email import (
 )
 from app.base import Request
 from app.responses import json_response
-from .schemes.admin import AdminRequestSchema, AdminResponseSchema
+from app.access import admin_required
+from .schemes import AdminRequestSchema, AdminResponseSchema
 
 router = RouteTableDef()
 
 
+@docs(tags=['admin'])  # type: ignore
 @request_schema(AdminRequestSchema())  # type: ignore
 @response_schema(AdminResponseSchema())
 @router.post("/admin.login")
@@ -40,12 +41,12 @@ async def admin_login(request: Request, mediator: Mediator) -> Response:
     return json_response(AdminResponseSchema().dump(admin))
 
 
+@docs(tags=['admin'])
 @response_schema(AdminResponseSchema())  # type: ignore
-@router.post("/admin.current")
+@router.get("/admin.current")
+@admin_required
 async def get_current_admin(request: Request, mediator: Mediator) -> Response:
     session = await get_session(request)
-    if not session.get("admin"):
-        raise HTTPUnauthorized
     email = session.get("admin", {}).get("email")
     if email:
         try:

@@ -70,6 +70,16 @@ from field_of_dreams.core.handlers.get_admin_by_email import (
     GetAdminByEmailCommand,
     GetAdminByEmailHandler,
 )
+from field_of_dreams.core.handlers.crud_word import (
+    CreateWordCommand,
+    UpdateWordCommand,
+    DeleteWordCommand,
+    GetWordCommand,
+    CreateWordHandler,
+    UpdateWordHandler,
+    DeleteWordHandler,
+    GetWordHandler,
+)
 from .mediator import MediatorImpl, Mediator
 from field_of_dreams.config import Settings
 
@@ -160,4 +170,8 @@ def build_mediator(
     mediator.bind(
         GetAdminByEmailCommand, GetAdminByEmailHandler(admin_gateway)
     )
+    mediator.bind(GetWordCommand, GetWordHandler(word_gateway))
+    mediator.bind(CreateWordCommand, CreateWordHandler(word_gateway, uow))
+    mediator.bind(UpdateWordCommand, UpdateWordHandler(word_gateway, uow))
+    mediator.bind(DeleteWordCommand, DeleteWordHandler(word_gateway, uow))
     return mediator

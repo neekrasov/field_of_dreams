@@ -5,7 +5,7 @@ from aiohttp_apispec import validation_middleware
 from aiohttp.web_response import StreamResponse
 from aiohttp.web_middlewares import middleware
 from aiohttp.web_exceptions import HTTPClientError, HTTPUnprocessableEntity
-from aiohttp.web import Application, Request, json_response
+from aiohttp.web import Application, Request, json_response, HTTPUnauthorized
 from di import Container, ScopeState
 from di.executors import AsyncExecutor
 from di.dependent import Dependent
@@ -51,6 +51,17 @@ async def auth_middleware(request: Request, handler: Controller):
     if session:
         admin = Admin(email=session["admin"]["email"])
         request.admin = admin
+    return await handler(request)
+
+
+@middleware
+async def admin_auth(request: Request, handler: Controller):
+    # check if admin after di middleware
+    # but handler has extra args for resolving
+    if hasattr(handler.keywords["handler"], "admin_required"):  # type: ignore
+        session = await aiohttp_session.get_session(request)
+        if "admin" not in session:
+            raise HTTPUnauthorized
     return await handler(request)
 
 
@@ -102,4 +113,5 @@ def setup_middlewares(
             aiohttp_session.SimpleCookieStorage()
         )
     )
+    app.middlewares.append(admin_auth)
     app.middlewares.append(create_di_middleware(container, app_state))

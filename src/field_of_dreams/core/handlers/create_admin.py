@@ -10,7 +10,7 @@ from ..services.hasher import PasswordHasher
 from ..protocols.gateways.admin import AdminGateway
 
 
-@dataclass
+@dataclass(frozen=True)
 class CreateAdminCommand:
     email: str
     raw_password: str

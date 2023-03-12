@@ -5,15 +5,13 @@ from field_of_dreams.core.entities.admin import Admin
 from ..protocols.gateways.admin import AdminGateway
 
 
-@dataclass
+@dataclass(frozen=True)
 class GetAdminByEmailCommand:
     email: str
 
 
 class GetAdminByEmailHandler(Handler[GetAdminByEmailCommand, Admin]):
-    def __init__(
-        self, admin_gateway: AdminGateway
-    ) -> None:
+    def __init__(self, admin_gateway: AdminGateway) -> None:
         self._admin_gateway = admin_gateway
 
     async def execute(self, command: GetAdminByEmailCommand) -> Admin:
