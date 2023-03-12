@@ -78,7 +78,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                     stats = await self._stats_gateway.get_user_stats(
                         chat_id, player.user_id
                     )
-                    stats.total_score += score_per_turn
+                    stats.total_score += player.score
                     stats.wins += 1
                     await self._stats_gateway.update_stats(stats)
 

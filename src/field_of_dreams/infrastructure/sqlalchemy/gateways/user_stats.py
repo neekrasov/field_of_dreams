@@ -1,5 +1,5 @@
 from typing import Sequence
-from sqlalchemy.sql import select, and_, or_, update
+from sqlalchemy.sql import select, and_, or_, update, desc
 from sqlalchemy.orm import joinedload
 
 from field_of_dreams.core.entities.user_stats import UserStats
@@ -39,7 +39,7 @@ class UserStatsGatewayImpl(SqlalchemyGateway, UserStatsGateway):
                     ),
                 )
             )
-            .order_by(UserStatsModel.wins)
+            .order_by(desc(UserStatsModel.wins))
             .limit(top)
         )
         return stats_result.scalars().all()
