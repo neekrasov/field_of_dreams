@@ -75,6 +75,7 @@ class APISettings:
     session_key: str = field(init=False)
     host: str = field(init=False)
     port: int = field(init=False)
+    salt: str = field(init=False)
 
     def __post_init__(self):
         self._read_env()
@@ -83,6 +84,7 @@ class APISettings:
         self.session_key = os.getenv("API_SESSION_KEY")
         self.host = os.getenv("API_HOST")
         self.port = os.getenv("API_PORT")
+        self.salt = os.getenv("API_SALT")
 
 
 @dataclass

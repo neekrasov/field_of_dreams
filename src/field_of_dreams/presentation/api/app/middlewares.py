@@ -10,6 +10,7 @@ from di import Container, ScopeState
 from di.executors import AsyncExecutor
 from di.dependent import Dependent
 
+from field_of_dreams.core.entities.admin import Admin
 from field_of_dreams.infrastructure.di.container import DIScope
 from .types import Controller
 
@@ -42,6 +43,15 @@ async def error_handling_middleware(request: Request, handler: Controller):
             status=HTTP_ERROR_CODES[e.status_code],
             message=e.reason,
         )
+
+
+@middleware
+async def auth_middleware(request: Request, handler: Controller):
+    session = await aiohttp_session.get_session(request)
+    if session:
+        admin = Admin(email=session["admin"]["email"])
+        request.admin = admin
+    return await handler(request)
 
 
 def error_json_response(
@@ -86,6 +96,7 @@ def setup_middlewares(
 ):
     app.middlewares.append(validation_middleware)
     app.middlewares.append(error_handling_middleware)
+    app.middlewares.append(auth_middleware)
     app.middlewares.append(
         aiohttp_session.session_middleware(
             aiohttp_session.SimpleCookieStorage()

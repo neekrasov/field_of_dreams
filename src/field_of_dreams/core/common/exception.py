@@ -5,20 +5,20 @@ class ApplicationException(Exception):
 
 
 class GatewayError(ApplicationException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    """Raises on database gateway errors"""
 
 
 class QueueAccessError(ApplicationException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    """Rises when the queue is wrong"""
 
 
 class GameOver(ApplicationException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    """Raises when the game is over"""
 
 
 class PlayerLoss(ApplicationException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    """Raises when the user loses"""
+
+
+class InvalidCredentials(ApplicationException):
+    """Raises when invalid credentials are entered"""

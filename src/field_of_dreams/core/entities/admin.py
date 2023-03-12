@@ -1,11 +1,12 @@
-from typing import NewType
+from typing import NewType, Optional
 from dataclasses import dataclass
+
 
 AdminID = NewType("AdminID", int)
 
 
 @dataclass
 class Admin:
-    id: AdminID
     email: str
-    hashed_password: str
+    id: Optional[AdminID] = None
+    hashed_password: Optional[str] = None

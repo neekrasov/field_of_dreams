@@ -3,6 +3,7 @@ from .exception import (  # noqa
     GatewayError,
     QueueAccessError,
     GameOver,
+    InvalidCredentials,
 )
 from .handler import Handler  # noqa
 from .uow import UnitOfWork  # noqa

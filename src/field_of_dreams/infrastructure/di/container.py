@@ -22,6 +22,7 @@ from field_of_dreams.infrastructure.tgbot.factory import (
     build_client_session,
 )
 from field_of_dreams.core.common import UnitOfWork, Mediator
+from field_of_dreams.core.services.hasher import PasswordHasher
 from field_of_dreams.core.protocols.gateways import (
     ChatGateway,
     GameGateway,
@@ -29,6 +30,7 @@ from field_of_dreams.core.protocols.gateways import (
     WordGateway,
     PlayerGateway,
     UserStatsGateway,
+    AdminGateway,
 )
 from field_of_dreams.infrastructure.sqlalchemy.gateways import (
     ChatGatewayImpl,
@@ -37,6 +39,7 @@ from field_of_dreams.infrastructure.sqlalchemy.gateways import (
     UserGatewayImpl,
     WordGatewayImpl,
     UserStatsGatewayImpl,
+    AdminGatewayImpl,
 )
 from field_of_dreams.infrastructure.sqlalchemy.uow import (
     UnitOfWorkImpl,
@@ -62,6 +65,11 @@ def build_container() -> Container:
     container.bind(
         bind_by_type(
             Dependent(lambda *args: Settings(), scope=DIScope.APP), Settings
+        )
+    )
+    container.bind(
+        bind_by_type(
+            Dependent(build_password_hasher, scope=DIScope.APP), PasswordHasher
         )
     )
     build_sa(container)
@@ -110,6 +118,12 @@ def build_gateways(container: Container) -> None:
         bind_by_type(
             Dependent(UserStatsGatewayImpl, scope=DIScope.REQUEST),
             UserStatsGateway,
+        )
+    )
+    container.bind(
+        bind_by_type(
+            Dependent(AdminGatewayImpl, scope=DIScope.REQUEST),
+            AdminGateway,
         )
     )
 
@@ -168,3 +182,7 @@ def match_request(
     if param is not None and param.name in ("_", "request"):
         return Dependent(Request, scope=DIScope.REQUEST)
     return None
+
+
+def build_password_hasher(settings: Settings) -> PasswordHasher:
+    return PasswordHasher(settings.api.salt)

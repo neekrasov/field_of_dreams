@@ -1,9 +1,11 @@
 from field_of_dreams.core.common import UnitOfWork
+from field_of_dreams.core.services.hasher import PasswordHasher
 from field_of_dreams.core.protocols.gateways.chat import ChatGateway
 from field_of_dreams.core.protocols.gateways.game import GameGateway
 from field_of_dreams.core.protocols.gateways.user import UserGateway
 from field_of_dreams.core.protocols.gateways.word import WordGateway
 from field_of_dreams.core.protocols.gateways.user_stats import UserStatsGateway
+from field_of_dreams.core.protocols.gateways.admin import AdminGateway
 from field_of_dreams.core.protocols.gateways.player import (
     PlayerGateway,
 )
@@ -56,6 +58,18 @@ from field_of_dreams.core.handlers.get_chat_stats import (
     GetChatStatsCommand,
     GetChatStatsHandler,
 )
+from field_of_dreams.core.handlers.admin_login import (
+    AdminLoginCommand,
+    AdminLoginHandler,
+)
+from field_of_dreams.core.handlers.create_admin import (
+    CreateAdminCommand,
+    CreateAdminHandler,
+)
+from field_of_dreams.core.handlers.get_admin_by_email import (
+    GetAdminByEmailCommand,
+    GetAdminByEmailHandler,
+)
 from .mediator import MediatorImpl, Mediator
 from field_of_dreams.config import Settings
 
@@ -67,6 +81,8 @@ def build_mediator(
     word_gateway: WordGateway,
     player_gateway: PlayerGateway,
     stats_gateway: UserStatsGateway,
+    admin_gateway: AdminGateway,
+    hasher: PasswordHasher,
     uow: UnitOfWork,
     game_view: GameView,
     settings: Settings,
@@ -136,5 +152,12 @@ def build_mediator(
     mediator.bind(
         GetChatStatsCommand,
         GetChatStatsHandler(chat_gateway, stats_gateway, game_view, uow),
+    )
+    mediator.bind(AdminLoginCommand, AdminLoginHandler(hasher, admin_gateway))
+    mediator.bind(
+        CreateAdminCommand, CreateAdminHandler(hasher, admin_gateway, uow)
+    )
+    mediator.bind(
+        GetAdminByEmailCommand, GetAdminByEmailHandler(admin_gateway)
     )
     return mediator

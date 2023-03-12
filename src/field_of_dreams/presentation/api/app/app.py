@@ -9,6 +9,7 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from field_of_dreams.infrastructure.di import build_container, DIScope
 from field_of_dreams.config import Settings
 from .middlewares import setup_middlewares
+from .events import create_admin
 from routes import setup_routes
 
 
@@ -24,4 +25,10 @@ async def main():
     async with container.enter_scope(DIScope.APP) as app_state:
         setup_middlewares(app, container, app_state)
         setup_routes(app.router)
+        await create_admin(
+            container,
+            app_state,
+            settings.api.admin.email,
+            settings.api.admin.password,
+        )
         await _run_app(app, host=settings.api.host, port=settings.api.port)
