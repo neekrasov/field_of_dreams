@@ -6,6 +6,7 @@ from aiohttp.web import (
 )
 from aiohttp_session import setup as session_setup
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
+
 from field_of_dreams.infrastructure.di import build_container, DIScope
 from field_of_dreams.config import Settings
 from .middlewares import setup_middlewares

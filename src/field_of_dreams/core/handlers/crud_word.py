@@ -44,7 +44,9 @@ class CreateWordHandler(Handler[CreateWordCommand, None]):
         self._uow = uow
 
     async def execute(self, command: CreateWordCommand) -> None:
-        await self._word_gateway.create_word(command.word, command.question)
+        await self._word_gateway.create_word(
+            command.word.lower(), command.question
+        )
         await self._uow.commit()
 
 
@@ -60,7 +62,7 @@ class UpdateWordHandler(Handler[UpdateWordCommand, None]):
     async def execute(self, command: UpdateWordCommand) -> None:
         try:
             await self._word_gateway.update_word(
-                command.word_id, command.word, command.question
+                command.word_id, command.word.lower(), command.question
             )
             await self._uow.commit()
         except GatewayError:
@@ -89,7 +91,7 @@ class GetWordHandler(Handler[GetWordCommand, Sequence[Word]]):
         self._word_gateway = word_gateway
 
     async def execute(self, command: GetWordCommand) -> Sequence[Word]:
-        words = await self._word_gateway.get_word(command.word)
+        words = await self._word_gateway.get_word(command.word.lower())
 
         if len(words) == 0:
             raise ApplicationException("Words not found")

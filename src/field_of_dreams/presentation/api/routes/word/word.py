@@ -1,3 +1,4 @@
+import logging
 from typing import Sequence
 from aiohttp.web import (
     Response,
@@ -32,6 +33,7 @@ from .schemes import (
 )
 
 router = RouteTableDef()
+logger = logging.getLogger()
 
 
 @docs(tags=["word"])
@@ -40,6 +42,8 @@ router = RouteTableDef()
 @router.get("/word")
 @admin_required
 async def get_word(request: Request, mediator: Mediator) -> Response:
+    word = request.query.get("word")
+    logger.info("Get word %s", word)
     try:
         words: Sequence[Word] = await mediator.send(
             GetWordCommand(request.query.get("word"))
@@ -60,7 +64,11 @@ async def get_word(request: Request, mediator: Mediator) -> Response:
 @admin_required
 async def create_word(request: Request, mediator: Mediator) -> Response:
     data = request.get("data")
+    logger.info(
+        "Create word %s with question %s", data["word"], data["question"]
+    )
     await mediator.send(CreateWordCommand(data["word"], data["question"]))
+    return Response(status=200)
 
 
 @docs(tags=["word"])
@@ -69,6 +77,9 @@ async def create_word(request: Request, mediator: Mediator) -> Response:
 @admin_required
 async def update_word(request: Request, mediator: Mediator) -> Response:
     data = request.get("data")
+    logger.info(
+        "Update word %s with id %s", data["word"], data["id"]
+    )
     try:
         await mediator.send(
             UpdateWordCommand(data["id"], data["word"], data["question"])
@@ -85,6 +96,9 @@ async def update_word(request: Request, mediator: Mediator) -> Response:
 @admin_required
 async def delete_word(request: Request, mediator: Mediator) -> Response:
     data = request.get("data")
+    logger.info(
+        "Delete word with id %s", data["id"]
+    )
     try:
         await mediator.send(DeleteWordCommand(data["id"]))
     except ApplicationException as e:

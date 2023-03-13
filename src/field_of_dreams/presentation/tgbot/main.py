@@ -2,6 +2,7 @@ import asyncio
 import logging.config
 from di.dependent import Dependent
 from di.executors import AsyncExecutor
+from aiohttp.client import ClientResponseError
 
 from field_of_dreams.config import Settings
 from field_of_dreams.core.common.exception import (
@@ -46,6 +47,9 @@ async def serve():
         )
         bot.add_exception_hander(
             QueueAccessError, exc.queue_access_exception_handler
+        )
+        bot.add_exception_hander(
+            ClientResponseError, exc.too_many_requests_handler
         )
 
         base.setup_handlers(bot)

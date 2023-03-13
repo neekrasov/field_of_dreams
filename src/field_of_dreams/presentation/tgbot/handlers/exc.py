@@ -1,5 +1,7 @@
 import logging
+import asyncio
 
+from aiohttp.client import ClientResponseError
 from field_of_dreams.infrastructure.tgbot import bot, states, types
 from field_of_dreams.core.common.exception import (
     ApplicationException,
@@ -30,11 +32,9 @@ async def game_over_exception_handler(
         chat_id = update.message.chat.id  # type: ignore
     else:
         chat_id = update.callback_query.message.chat.id  # type: ignore
-    state = bot.get_state(chat_id)
-    if state and state.value.data:
-        task = state.value.data.get("task")
-        if task:
-            task.cancel()
+    timer = bot.get_timer(chat_id)
+    if timer:
+        timer.del_all()
     bot.set_state(chat_id, states.GameState.FINISHED)
     await bot.send_message(chat_id, e.message)
 
@@ -48,3 +48,21 @@ async def queue_access_exception_handler(
     else:
         chat_id = update.callback_query.message.chat.id  # type: ignore
         await bot.answer_callback_query(update.callback_query.id, e.message)  # type: ignore # noqa
+
+
+async def too_many_requests_handler(
+    update: types.Update, e: ClientResponseError, bot: bot.Bot
+):
+    logging.info("Too many requests error")
+    await asyncio.sleep(20)
+    msg = "Сервер перегружен, пожалуйста начните игру позже..."
+    if update.message:
+        chat_id = update.message.chat.id  # type: ignore
+        await bot.send_message(chat_id, msg)
+    else:
+        chat_id = update.callback_query.message.chat.id  # type: ignore
+        await bot.answer_callback_query(update.callback_query.id, msg)  # type: ignore # noqa
+
+    timer = bot.get_timer(chat_id)  # type: ignore
+    if timer:
+        timer.del_all()

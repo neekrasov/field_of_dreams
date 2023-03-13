@@ -81,11 +81,6 @@ async def finish(
 ):
     logger.info("Finish game")
     chat_id = update.message.chat.id  # type: ignore
-    state = bot.get_state(chat_id)
-    if state == states.GameState.FINISHED:
-        await bot.send_message(chat_id, "Игра уже завершена.")
-        return
-
     user_id = update.message.from_user.id  # type: ignore
     username = update.message.from_user.username  # type: ignore
     admins = await bot.get_chat_administrators(chat_id)
@@ -312,19 +307,17 @@ async def player_turn(
     )
 
     options = {"letter": "букву", "word": "слово"}
-    timer.run(
-        create_timer(
-            settings.bot.max_turn_time,
-            bot,
-            chat_id,
-            text=(
-                f"Игрок @{username} выбирает "
-                f"{options[update.callback_query.data]}... \n"  # type: ignore
-                "🕑 Ограничение по времени (в секундах): {}"
-            ),
-            expired_text=("🕑 Истёк срок ожидания ответа от пользователя"),
-        )
-    )
+    task = timer.run(create_timer(
+        settings.bot.max_turn_time,
+        bot,
+        chat_id,
+        text=(
+            f"Игрок @{username} выбирает "
+            f"{options[update.callback_query.data]}... \n"  # type: ignore
+            "🕑 Ограничение по времени (в секундах): {}"
+        ),
+        expired_text=("🕑 Истёк срок ожидания ответа от пользователя"),
+    ))
     if update.callback_query.data == "letter":  # type: ignore
         state = states.GameState.PLAYER_LETTER_TURN
     else:
@@ -332,6 +325,12 @@ async def player_turn(
 
     state.value.set_data({"user_id": user_id})
     bot.set_state(chat_id, state)
+
+    await task
+    if not task.cancelled():
+        await mediator.send(IdleTurnCommand(ChatID(chat_id)))
+        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        await bot.handle_update(update)
 
 
 async def player_word_turn(
