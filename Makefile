@@ -1,9 +1,19 @@
-include .env
-export
-
-
 ALEMBIC:=src/field_of_dreams/config/alembic.ini
 PRESENTATION:=src/field_of_dreams/presentation/
+DOCKER_COMPOSE:=deploy/docker-compose.yml
+
+DOCKER_ENV := deploy/.env
+LOCAL_ENV := .env
+
+ifneq (${DOCKER},)
+	ENV_FILE := ${DOCKER_ENV}
+else ifeq (${DOCKER},)
+	ENV_FILE := ${LOCAL_ENV}
+endif
+
+include ${ENV_FILE}
+export
+
 
  .PHONY: run-amqp
 run-amqp:
@@ -36,3 +46,23 @@ migrate-history:
  .PHONY: migrate-stamp
 migrate-stamp:
 	poetry run alembic -c $(ALEMBIC) stamp $(revision)
+
+ .PHONY: compose-build
+compose-build:
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} build
+
+ .PHONY: compose-up
+compose-up:
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} up
+
+ .PHONY: compose-logs
+compose-logs:
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} logs -f
+
+ .PHONY: compose-exec
+compose-exec:
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} exec backend bash
+
+ .PHONY: compose-down
+compose-down:
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} down --remove-orphans

@@ -1,6 +1,6 @@
 import asyncio
 
-from app import main
+from field_of_dreams.presentation.api.app.app import main
 
 
 if __name__ == "__main__":

@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: fod_db
+    image: postgres:14
+    volumes:
+      - fod_db_data:/var/lib/postgresql/data
+    ports:
+      - ${HOST_POSTGRES_PORT}:${POSTGRES_PORT}
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+  
+  migrations:
+    build:
+      context: ../
+      dockerfile: deploy/migrations.Dockerfile
+    depends_on:
+      - db
+
+  # rabbitmq:
+  #   container_name: fod_rabbitmq
+  #   image: rabbitmq:3.11.10-management
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: ${RABBIT_USERNAME}
+  #     RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
+  #   ports:
+  #     - ${RABBIT_HOST_PORT}:${RABBIT_PORT}
+  #     - ${RABBIT_MANAGE_HOST_PORT}:${RABBIT_MANAGE_PORT}
+  #   volumes:
+  #     - fod_rabbitmq_data:/var/lib/rabbitmq
+  #   restart: always
+  #   depends_on:
+  #     - db
+
+  # bot:
+  #   container_name: fod_bot
+  #   build:
+  #     context: ../
+  #     dockerfile: deploy/bot.Dockerfile
+  #   depends_on:
+  #     - db
+  #     - migrations
+  #     - rabbitmq
+  #     - amqp
+  #   env_file:
+  #     - .env
+  
+  api:
+    container_name: fod_api
+    build:
+      context: ../
+      dockerfile: deploy/api.Dockerfile
+    ports:
+     - ${API_HOST_PORT}:${API_PORT}
+    depends_on:
+      - db
+      - migrations
+    env_file:
+      - .env
+  
+  # amqp:
+  #   container_name: fod_amqp
+  #   build:
+  #     context: ../
+  #     dockerfile: deploy/amqp.Dockerfile
+  #   depends_on:
+  #     - db
+  #     - rabbitmq
+  #   env_file:
+  #     - .env
+  
+volumes:
+  fod_db_data:
+  # fod_rabbitmq_data:

@@ -1,6 +1,6 @@
 [[package]]
 name = "aio-pika"
-version = "9.0.4"
+version = "9.0.5"
 description = "Wrapper around the aiormq for asyncio and humans"
 category = "main"
 optional = false
@@ -666,8 +666,8 @@ content-hash = "fab6fe4d00c5f84c00f6b2087950783c43312d1460ea722413afcf76cdc08462
 
 [metadata.files]
 aio-pika = [
-    {file = "aio_pika-9.0.4-py3-none-any.whl", hash = "sha256:002645768feaf5e27255824b7814f8b657f67bbcf24b381bc93cd88faaabf913"},
-    {file = "aio_pika-9.0.4.tar.gz", hash = "sha256:a7cf270de3f23dd550beca6e287e2a4707c99bd092a606619ff3b0df44deb6fa"},
+    {file = "aio_pika-9.0.5-py3-none-any.whl", hash = "sha256:48e90b6a901742e8078c306d3a28580a065b16b5178dd50b2399b27b1884b15d"},
+    {file = "aio_pika-9.0.5.tar.gz", hash = "sha256:096add8286019832008baa48e7463d7c0c609953011ec4c3e185f5249760e47b"},
 ]
 aiohttp = [
     {file = "aiohttp-3.8.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5ce45967538fb747370308d3145aa68a074bdecb4f3a300869590f725ced69c1"},
