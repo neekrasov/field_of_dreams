@@ -14,6 +14,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
   
   migrations:
+    image: ${BASE_IMAGE}
     build:
       context: ../
       dockerfile: deploy/Dockerfile
@@ -36,6 +37,7 @@ services:
 
   bot:
     container_name: fod_bot
+    image: ${BASE_IMAGE}
     build:
       context: ../
       dockerfile: deploy/Dockerfile
@@ -48,6 +50,7 @@ services:
   
   api:
     container_name: fod_api
+    image: ${BASE_IMAGE}
     build:
       context: ../
       dockerfile: deploy/Dockerfile
@@ -62,6 +65,7 @@ services:
   
   amqp:
     container_name: fod_amqp
+    image: ${BASE_IMAGE}
     build:
       context: ../
       dockerfile: deploy/Dockerfile

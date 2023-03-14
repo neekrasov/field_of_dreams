@@ -3,17 +3,6 @@ PRESENTATION:=src/field_of_dreams/presentation/
 DOCKER_COMPOSE:=deploy/docker-compose.yml
 
 DOCKER_ENV := deploy/.env
-LOCAL_ENV := .env
-
-ifneq (${DOCKER},)
-	ENV_FILE := ${DOCKER_ENV}
-else ifeq (${DOCKER},)
-	ENV_FILE := ${LOCAL_ENV}
-endif
-
-include ${ENV_FILE}
-export
-
 
  .PHONY: run-amqp
 run-amqp:
@@ -46,10 +35,6 @@ migrate-history:
  .PHONY: migrate-stamp
 migrate-stamp:
 	poetry run alembic -c $(ALEMBIC) stamp $(revision)
-
- .PHONY: docker-build-base
-docker-build-base:
-	docker build -t base-image -f deploy/base.Dockerfile .
 
  .PHONY: compose-build
 compose-build:

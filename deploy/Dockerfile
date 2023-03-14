@@ -4,7 +4,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     PYTHONPATH=src/ \
-    DOCKER=1 \
     PATH="/root/.local/bin:$PATH"
 
 RUN apt-get update && \
