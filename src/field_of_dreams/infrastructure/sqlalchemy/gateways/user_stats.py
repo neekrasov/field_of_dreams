@@ -39,7 +39,9 @@ class UserStatsGatewayImpl(SqlalchemyGateway, UserStatsGateway):
                     ),
                 )
             )
-            .order_by(desc(UserStatsModel.wins))
+            .order_by(
+                desc(UserStatsModel.wins), desc(UserStatsModel.total_score)
+            )
             .limit(top)
         )
         return stats_result.scalars().all()
