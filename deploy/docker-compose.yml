@@ -19,6 +19,8 @@ services:
       context: ../
       dockerfile: deploy/Dockerfile
     command: ["make", "migrate-up"]
+    env_file:
+      - .env
     depends_on:
       - db
 

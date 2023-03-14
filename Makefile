@@ -42,7 +42,11 @@ compose-build:
 
  .PHONY: compose-up
 compose-up:
-	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} up
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} up -d
+
+ .PHONY: compose-pull
+compose-pull:
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} pull
 
  .PHONY: compose-logs
 compose-logs:
