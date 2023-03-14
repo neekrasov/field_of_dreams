@@ -1,10 +1,6 @@
 import logging
 from typing import Sequence
-from aiohttp.web import (
-    Response,
-    RouteTableDef,
-    HTTPNotFound,
-)
+from aiohttp.web import Response, RouteTableDef
 from aiohttp_apispec import (
     request_schema,
     response_schema,
@@ -15,7 +11,7 @@ from aiohttp_apispec import (
 from app.base import Request
 from app.responses import json_response
 from app.access import admin_required
-from field_of_dreams.core.common import Mediator, ApplicationException
+from field_of_dreams.core.common import Mediator
 from field_of_dreams.core.entities.word import Word
 from field_of_dreams.core.handlers.crud_word import (
     CreateWordCommand,
@@ -44,13 +40,9 @@ logger = logging.getLogger()
 async def get_word(request: Request, mediator: Mediator) -> Response:
     word = request.query.get("word")
     logger.info("Get word %s", word)
-    try:
-        words: Sequence[Word] = await mediator.send(
-            GetWordCommand(request.query.get("word"))
-        )
-    except ApplicationException as e:
-        raise HTTPNotFound(reason=e.message)
-
+    words: Sequence[Word] = await mediator.send(
+        GetWordCommand(request.query.get("word"))
+    )
     return json_response(
         GetWordResponseSchema().dump(
             {"words": [WordResponseSchema().dump(word) for word in words]}
@@ -77,16 +69,10 @@ async def create_word(request: Request, mediator: Mediator) -> Response:
 @admin_required
 async def update_word(request: Request, mediator: Mediator) -> Response:
     data = request.get("data")
-    logger.info(
-        "Update word %s with id %s", data["word"], data["id"]
+    logger.info("Update word %s with id %s", data["word"], data["id"])
+    await mediator.send(
+        UpdateWordCommand(data["id"], data["word"], data["question"])
     )
-    try:
-        await mediator.send(
-            UpdateWordCommand(data["id"], data["word"], data["question"])
-        )
-    except ApplicationException as e:
-        raise HTTPNotFound(reason=e.message)
-
     return Response(status=200)
 
 
@@ -96,12 +82,6 @@ async def update_word(request: Request, mediator: Mediator) -> Response:
 @admin_required
 async def delete_word(request: Request, mediator: Mediator) -> Response:
     data = request.get("data")
-    logger.info(
-        "Delete word with id %s", data["id"]
-    )
-    try:
-        await mediator.send(DeleteWordCommand(data["id"]))
-    except ApplicationException as e:
-        raise HTTPNotFound(reason=e.message)
-
+    logger.info("Delete word with id %s", data["id"])
+    await mediator.send(DeleteWordCommand(data["id"]))
     return Response(status=200)

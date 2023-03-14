@@ -1,8 +1,8 @@
 import inspect
 import aiohttp
 import typing
+import enum
 from aiohttp.web import Request
-from dataclasses import dataclass
 from di.api.dependencies import DependentBase
 from di import Container, bind_by_type
 from di.dependent import Dependent
@@ -53,8 +53,7 @@ from field_of_dreams.config import Settings
 from ..mediator import build_mediator
 
 
-@dataclass
-class DIScope:
+class DIScope(enum.Enum):
     APP = "app"
     REQUEST = "request"
 

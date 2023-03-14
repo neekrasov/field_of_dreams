@@ -5,7 +5,7 @@ from field_of_dreams.core.common import (
     Handler,
     UnitOfWork,
     GatewayError,
-    ApplicationException,
+    NotFoundError,
 )
 from field_of_dreams.core.entities.word import WordID, Word
 from ..protocols.gateways.word import WordGateway
@@ -66,7 +66,7 @@ class UpdateWordHandler(Handler[UpdateWordCommand, None]):
             )
             await self._uow.commit()
         except GatewayError:
-            raise ApplicationException("Word not found")
+            raise NotFoundError("Word not found")
 
 
 class DeleteWordHandler(Handler[DeleteWordCommand, None]):
@@ -83,7 +83,7 @@ class DeleteWordHandler(Handler[DeleteWordCommand, None]):
             await self._word_gateway.delete_word(command.word_id)
             await self._uow.commit()
         except GatewayError:
-            raise ApplicationException("Word not found")
+            raise NotFoundError("Word not found")
 
 
 class GetWordHandler(Handler[GetWordCommand, Sequence[Word]]):
@@ -94,6 +94,6 @@ class GetWordHandler(Handler[GetWordCommand, Sequence[Word]]):
         words = await self._word_gateway.get_word(command.word.lower())
 
         if len(words) == 0:
-            raise ApplicationException("Words not found")
+            raise NotFoundError("Words not found")
 
         return words

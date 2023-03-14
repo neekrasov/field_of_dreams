@@ -69,7 +69,7 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
                 stats = await self._stats_gateway.get_user_stats(
                     chat_id, player.user_id
                 )
-                stats.total_score += player.get_score()
+                stats.total_score += player.score
                 stats.wins += 1
                 await self._stats_gateway.update_stats(stats)
 
@@ -78,11 +78,15 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
                     word,
                     player.username,
                     score_per_turn,
-                    player.get_score(),
+                    player.score,
                 )
             else:
                 if user_word.isnumeric():
-                    await self._game_view.dont_support_numeric(
+                    await self._game_view.notify_dont_support_numeric(
+                        chat_id, player.username
+                    )
+                elif current_game.word.contain_punctuation:
+                    await self._game_view.notify_dont_support_punctuation(
                         chat_id, player.username
                     )
                 else:

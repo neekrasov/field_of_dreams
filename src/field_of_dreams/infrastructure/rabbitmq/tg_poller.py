@@ -1,6 +1,5 @@
 import asyncio
 import json
-import traceback
 import logging
 import aio_pika
 import typing
@@ -44,8 +43,7 @@ class RabbitMQPoller(Poller):
                                 )
                             )
             except Exception as e:
-                logger.info(traceback.format_exc())
-                logger.info("Error while polling for updates: {}".format(e))
+                logger.error(f"Error while polling for updates: {e}")
                 await asyncio.sleep(5)
 
         await connection.close()

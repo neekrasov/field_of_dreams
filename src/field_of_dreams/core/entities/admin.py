@@ -7,6 +7,6 @@ AdminID = NewType("AdminID", int)
 
 @dataclass
 class Admin:
+    id: Optional[AdminID]
     email: str
-    id: Optional[AdminID] = None
     hashed_password: Optional[str] = None

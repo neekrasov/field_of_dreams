@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass, field
 
 
-@dataclass
+@dataclass(slots=True)
 class PGSettings:
     user: str = field(init=False)
     password: str = field(init=False)
@@ -31,7 +31,7 @@ class PGSettings:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class BotSettings:
     token: str = field(init=False)
     timeout: int = field(init=False)
@@ -56,7 +56,7 @@ class BotSettings:
         self.word_score_to = int(os.getenv("BOT_WORD_SCORE_TO"))
 
 
-@dataclass
+@dataclass(slots=True)
 class AdminSettings:
     email: str = field(init=False)
     password: str = field(init=False)
@@ -69,7 +69,7 @@ class AdminSettings:
         self.password = os.getenv("ADMIN_PASSWORD")
 
 
-@dataclass
+@dataclass(slots=True)
 class RabbitMQSettings:
     username: str = field(init=False)
     password: str = field(init=False)
@@ -95,7 +95,7 @@ class RabbitMQSettings:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class APISettings:
     admin: AdminSettings = field(init=False, default_factory=AdminSettings)
     session_key: str = field(init=False)
@@ -113,7 +113,7 @@ class APISettings:
         self.salt = os.getenv("API_SALT")
 
 
-@dataclass
+@dataclass(slots=True)
 class Settings:
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)

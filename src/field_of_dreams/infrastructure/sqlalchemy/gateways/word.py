@@ -24,9 +24,11 @@ class WordGatewayImpl(SqlalchemyGateway, WordGateway):
         )
         return word_result.scalars().all()
 
+    # TODO Можно ли сразу удалить без лишнего запроса?
     async def delete_word(self, word_id: WordID) -> None:
         word_db = await self.get_if_exists(word_id)
         await self._session.delete(word_db)
+        await self._try_flush()
 
     async def update_word(
         self, word_id: WordID, word: str, question: str
@@ -34,6 +36,7 @@ class WordGatewayImpl(SqlalchemyGateway, WordGateway):
         word_db = await self.get_if_exists(word_id)
         word_db.question = question
         word_db.word = word
+        await self._try_flush()
 
     async def get_if_exists(self, word_id: WordID) -> Word:
         word_result = await self._session.execute(

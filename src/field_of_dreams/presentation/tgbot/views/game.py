@@ -64,7 +64,7 @@ class GameViewImpl(GameView):
                         chat_id=chat_id, message_id=message.message_id
                     )
 
-    async def correct_letter(
+    async def notify_correct_letter(
         self,
         chat_id: ChatID,
         letter: str,
@@ -81,7 +81,7 @@ class GameViewImpl(GameView):
             ),
         )
 
-    async def wrong_letter(
+    async def notify_wrong_letter(
         self, chat_id: ChatID, letter: str, username: str
     ) -> None:
         await self._bot.send_message(
@@ -100,7 +100,7 @@ class GameViewImpl(GameView):
             ),
         )
 
-    async def winner_letter(
+    async def notify_winner_letter(
         self,
         chat_id: ChatID,
         letter: str,
@@ -153,7 +153,7 @@ class GameViewImpl(GameView):
             ),
         )
 
-    async def empty_stats(self, chat_id: ChatID) -> None:
+    async def notify_empty_stats(self, chat_id: ChatID) -> None:
         await self._bot.send_message(
             chat_id,
             text=(
@@ -178,7 +178,7 @@ class GameViewImpl(GameView):
             chat_id, text=f"📈 Топ игроков:{statistics}"
         )
 
-    async def empty_stats_chat_not_exists(self, chat_id: ChatID):
+    async def notify_empty_stats_chat_not_exists(self, chat_id: ChatID):
         await self._bot.send_message(
             chat_id,
             text=(
@@ -188,9 +188,19 @@ class GameViewImpl(GameView):
             ),
         )
 
-    async def dont_support_numeric(
+    async def notify_dont_support_numeric(
         self, chat_id: ChatID, username: str
     ) -> None:
         await self._bot.send_message(
             chat_id, text=(f"@{username} слова не могут состоять из чисел 🙄")
+        )
+
+    async def notify_dont_support_punctuation(
+        self, chat_id: ChatID, username: str
+    ) -> None:
+        await self._bot.send_message(
+            chat_id,
+            text=(
+                f"@{username} слова не могут состоять из знаков пунктуации 🙄"
+            ),
         )

@@ -22,3 +22,10 @@ class PlayerLoss(ApplicationException):
 
 class InvalidCredentials(ApplicationException):
     """Raises when invalid credentials are entered"""
+
+    def __init__(self, message: str = "Invalid credentials"):
+        super().__init__(message)
+
+
+class NotFoundError(ApplicationException):
+    """Raises when something is not found"""

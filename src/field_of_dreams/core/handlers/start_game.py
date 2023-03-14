@@ -46,8 +46,8 @@ class StartGameHandler(Handler[StartGameCommand, None]):
             )
         word = current_game.word
         word_mask = word.get_mask(current_game.guessed_letters)
-        current_game.set_state(GameState.STARTED)
-        current_game.set_current_player(queue[0].id)  # type: ignore
+        current_game.state = GameState.STARTED
+        current_game.cur_player_id = queue[0].id  # type: ignore
         await self._uow.commit()
 
         await self._view.send_and_pin_word_mask(

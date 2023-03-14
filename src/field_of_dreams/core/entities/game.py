@@ -37,12 +37,6 @@ class Game:
     end_time: Optional[datetime] = None
     id: Optional[GameID] = None
 
-    def set_state(self, state: GameState):
-        self.state = state
-
-    def set_current_player(self, player_id: "PlayerID"):
-        self.cur_player_id = player_id
-
     @property
     def is_started(self) -> bool:
         return self.state == GameState.STARTED

@@ -1,18 +1,23 @@
 import json
 import aiohttp_session
-from typing import Optional, Awaitable
+from typing import Awaitable
 from aiohttp_apispec import validation_middleware
 from aiohttp.web_response import StreamResponse
 from aiohttp.web_middlewares import middleware
 from aiohttp.web_exceptions import HTTPClientError, HTTPUnprocessableEntity
-from aiohttp.web import Application, Request, json_response, HTTPUnauthorized
+from aiohttp.web import Application, Request, HTTPUnauthorized
 from di import Container, ScopeState
 from di.executors import AsyncExecutor
 from di.dependent import Dependent
 
+from field_of_dreams.core.common import (
+    InvalidCredentials,
+    NotFoundError,
+)
 from field_of_dreams.core.entities.admin import Admin
 from field_of_dreams.infrastructure.di.container import DIScope
 from .types import Controller
+from .responses import error_json_response
 
 HTTP_ERROR_CODES = {
     400: "bad_request",
@@ -30,6 +35,18 @@ async def error_handling_middleware(request: Request, handler: Controller):
     try:
         response = await handler(request)
         return response
+    except NotFoundError as e:
+        return error_json_response(
+            http_status=404,
+            status=HTTP_ERROR_CODES[404],
+            message=e.message,
+        )
+    except InvalidCredentials as e:
+        return error_json_response(
+            http_status=403,
+            status=HTTP_ERROR_CODES[403],
+            message=e.message,
+        )
     except HTTPUnprocessableEntity as e:
         return error_json_response(
             http_status=400,
@@ -49,34 +66,21 @@ async def error_handling_middleware(request: Request, handler: Controller):
 async def auth_middleware(request: Request, handler: Controller):
     session = await aiohttp_session.get_session(request)
     if session:
-        admin = Admin(email=session["admin"]["email"])
-        request.admin = admin
+        request.admin = Admin(
+            id=session["admin"]["id"], email=session["admin"]["email"]
+        )
     return await handler(request)
 
 
 @middleware
 async def admin_auth(request: Request, handler: Controller):
-    # check if admin after di middleware
+    # check if admin before di middleware
     # but handler has extra args for resolving
     if hasattr(handler.keywords["handler"], "admin_required"):  # type: ignore
         session = await aiohttp_session.get_session(request)
         if "admin" not in session:
             raise HTTPUnauthorized
     return await handler(request)
-
-
-def error_json_response(
-    http_status: int,
-    status: str = "error",
-    message: Optional[str] = None,
-    data: Optional[dict] = None,
-):
-    if data is None:
-        data = {}
-    return json_response(
-        status=http_status,
-        data={"status": status, "message": str(message), "data": data},
-    )
 
 
 def create_di_middleware(container: Container, app_state: ScopeState):

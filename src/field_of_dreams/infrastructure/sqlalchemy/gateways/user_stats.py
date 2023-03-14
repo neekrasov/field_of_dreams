@@ -62,8 +62,6 @@ class UserStatsGatewayImpl(SqlalchemyGateway, UserStatsGateway):
                 UserStatsModel.user_id == stats.user_id,
             )
             .values(
-                user_id=stats.user_id,
-                chat_id=stats.chat_id,
                 total_score=stats.total_score,
                 wins=stats.wins,
             )

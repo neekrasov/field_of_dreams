@@ -24,7 +24,7 @@ class GameView(Protocol):
     async def unpin_word_mask(self, chat_id: ChatID) -> None:
         raise NotImplementedError
 
-    async def correct_letter(
+    async def notify_correct_letter(
         self,
         chat_id: ChatID,
         letter: str,
@@ -34,7 +34,7 @@ class GameView(Protocol):
     ) -> None:
         raise NotImplementedError
 
-    async def wrong_letter(
+    async def notify_wrong_letter(
         self, chat_id: ChatID, letter: str, username: str
     ) -> None:
         raise NotImplementedError
@@ -44,7 +44,7 @@ class GameView(Protocol):
     ) -> None:
         raise NotImplementedError
 
-    async def winner_letter(
+    async def notify_winner_letter(
         self,
         chat_id: ChatID,
         letter: str,
@@ -73,7 +73,7 @@ class GameView(Protocol):
     ) -> None:
         raise NotImplementedError
 
-    async def empty_stats(self, chat_id: ChatID) -> None:
+    async def notify_empty_stats(self, chat_id: ChatID) -> None:
         raise NotImplementedError
 
     async def show_stats(
@@ -81,10 +81,15 @@ class GameView(Protocol):
     ) -> None:
         raise NotImplementedError
 
-    async def empty_stats_chat_not_exists(self, chat_id: ChatID):
+    async def notify_empty_stats_chat_not_exists(self, chat_id: ChatID):
         raise NotImplementedError
 
-    async def dont_support_numeric(
+    async def notify_dont_support_numeric(
+        self, chat_id: ChatID, username: str
+    ) -> None:
+        raise NotImplementedError
+
+    async def notify_dont_support_punctuation(
         self, chat_id: ChatID, username: str
     ) -> None:
         raise NotImplementedError

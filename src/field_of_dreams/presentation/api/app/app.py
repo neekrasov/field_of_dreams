@@ -20,7 +20,10 @@ async def main():
     app = Application()
     container = build_container()
     setup_aiohttp_apispec(
-        app, title="Puzzle Wheel", url="/docs/json", swagger_path="/docs"
+        app,
+        title="Puzzle Wheel",
+        swagger_path="/docs",
+        static_path="/api",
     )
     session_setup(app, EncryptedCookieStorage(settings.api.session_key))
     async with container.enter_scope(DIScope.APP) as app_state:

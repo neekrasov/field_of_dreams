@@ -30,11 +30,5 @@ class Player:
     def username(self) -> str:
         return self.user.name
 
-    def set_state(self, state: PlayerState) -> None:
-        self.state = state
-
     def add_score(self, score: int) -> None:
         self.score += score
-
-    def get_score(self) -> int:
-        return self.score

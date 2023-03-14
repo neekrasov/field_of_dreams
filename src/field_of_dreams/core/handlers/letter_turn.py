@@ -1,3 +1,4 @@
+import string
 from dataclasses import dataclass
 
 from ..entities.chat import ChatID
@@ -57,8 +58,13 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 )
 
             word = current_game.word
-            if letter.isnumeric():
-                await self._game_view.dont_support_numeric(
+
+            if letter in string.punctuation:
+                await self._game_view.notify_dont_support_punctuation(
+                    chat_id, player.username
+                )
+            elif letter.isnumeric():
+                await self._game_view.notify_dont_support_numeric(
                     chat_id, player.username
                 )
             elif current_game.check_already_guessed_letter(letter):
@@ -88,16 +94,16 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                         word.get_mask(current_game.guessed_letters),
                         word.question,
                     )
-                    await self._game_view.winner_letter(
+                    await self._game_view.notify_winner_letter(
                         chat_id,
                         letter,
                         player.username,
                         word.count_letter(letter),
                         score_per_turn,
-                        player.get_score(),
+                        player.score,
                     )
                 else:
-                    await self._game_view.correct_letter(
+                    await self._game_view.notify_correct_letter(
                         chat_id,
                         letter,
                         word.count_letter(letter),
@@ -110,7 +116,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                         word.question,
                     )
             else:
-                await self._game_view.wrong_letter(
+                await self._game_view.notify_wrong_letter(
                     chat_id, letter, player.username
                 )
 

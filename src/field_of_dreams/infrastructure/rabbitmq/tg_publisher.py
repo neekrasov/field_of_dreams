@@ -1,10 +1,9 @@
-import json
-import aio_pika
-import traceback
 import asyncio
+import aio_pika
 import aiohttp
 import logging
 import typing
+import json
 
 
 logger = logging.getLogger()
@@ -66,8 +65,7 @@ class TelegramSubscriber:
                         offset = update["update_id"] + 1
                         await self.process_update(update)
             except Exception as e:
-                logger.info(traceback.format_exc())
-                logger.info("Error while polling for updates: {}".format(e))
+                logging.error(f"Error while polling for updates: {e}")
                 await asyncio.sleep(5)
 
     async def process_update(self, update: dict):

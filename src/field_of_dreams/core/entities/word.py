@@ -1,3 +1,4 @@
+import string
 from typing import Optional, NewType, List
 from dataclasses import dataclass
 
@@ -25,3 +26,7 @@ class Word:
     def is_last_letter_remaining(self, shown_letters: List[str]):
         remaining_chars = set(self.word) - set(shown_letters)
         return len(remaining_chars) == 1
+
+    @property
+    def contain_punctuation(self):
+        return any(char in string.punctuation for char in self.word)

@@ -47,6 +47,10 @@ migrate-history:
 migrate-stamp:
 	poetry run alembic -c $(ALEMBIC) stamp $(revision)
 
+ .PHONY: docker-build-base
+docker-build-base:
+	docker build -t base-image -f deploy/base.Dockerfile .
+
  .PHONY: compose-build
 compose-build:
 	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} build

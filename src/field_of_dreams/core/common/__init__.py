@@ -4,6 +4,7 @@ from .exception import (  # noqa
     QueueAccessError,
     GameOver,
     InvalidCredentials,
+    NotFoundError,
 )
 from .handler import Handler  # noqa
 from .uow import UnitOfWork  # noqa

@@ -36,8 +36,6 @@ async def serve(
         logger.info("Shutting down amqp")
         await tg_subscriber.stop()
 
-    await tg_subscriber.start_polling()
-
 
 if __name__ == "__main__":
     settings = Settings()
