@@ -35,7 +35,7 @@ jobs:
         name: Build
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ./deploy
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
