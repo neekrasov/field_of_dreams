@@ -15,12 +15,6 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      -
-        name: Set lower case owner name
-        run: echo "REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-      -
-        name: Set lower case repo name
-        run: echo "REPOSITORY_NAME=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
       - 
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
