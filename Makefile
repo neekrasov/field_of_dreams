@@ -1,8 +1,12 @@
 ALEMBIC:=src/field_of_dreams/config/alembic.ini
 PRESENTATION:=src/field_of_dreams/presentation/
 DOCKER_COMPOSE:=deploy/docker-compose.yml
-
 DOCKER_ENV := deploy/.env
+
+ifeq ($(ENV), dev)
+	DOCKER_COMPOSE:=deploy/dev.docker-compose.yml
+	DOCKER_ENV:=deploy/dev.env
+endif
 
  .PHONY: run-amqp
 run-amqp:

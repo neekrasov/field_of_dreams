@@ -15,7 +15,9 @@ services:
     restart: on-failure
   
   migrations:
-    image: ${BASE_IMAGE}
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
     command: ["make", "migrate-up"]
     env_file:
       - .env
@@ -42,7 +44,9 @@ services:
 
   bot:
     container_name: fod_bot
-    image: ${BASE_IMAGE}
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
     depends_on:
       - amqp
     env_file:
@@ -52,7 +56,9 @@ services:
   
   api:
     container_name: fod_api
-    image: ${BASE_IMAGE}
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
     ports:
      - ${API_HOST_PORT}:${API_PORT}
     depends_on:
@@ -64,7 +70,9 @@ services:
   
   amqp:
     container_name: fod_amqp
-    image: ${BASE_IMAGE}
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
     depends_on:
       rabbitmq:
         condition: service_healthy
