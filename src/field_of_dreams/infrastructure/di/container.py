@@ -3,6 +3,7 @@ import aiohttp
 import typing
 import enum
 from aiohttp.web import Request
+from redis.asyncio import Redis
 from di.api.dependencies import DependentBase
 from di import Container, bind_by_type
 from di.dependent import Dependent
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     async_sessionmaker,
 )
-from field_of_dreams.infrastructure.tgbot.protocols import Bot, Poller
+from field_of_dreams.infrastructure.tgbot.protocols import Bot, Poller, Storage
 from field_of_dreams.presentation.tgbot.views.game import (
     GameView,
     GameViewImpl,
@@ -19,6 +20,12 @@ from field_of_dreams.presentation.tgbot.views.game import (
 from field_of_dreams.infrastructure.tgbot.factory import (
     build_telegram_bot,
     build_client_session,
+)
+from field_of_dreams.infrastructure.redis.factory import (
+    build_redis,
+)
+from field_of_dreams.presentation.tgbot.states.factory import (
+    build_redis_storage,
 )
 from field_of_dreams.core.common import UnitOfWork, Mediator
 from field_of_dreams.core.services.hasher import PasswordHasher
@@ -70,6 +77,9 @@ def build_container() -> Container:
         bind_by_type(
             Dependent(build_password_hasher, scope=DIScope.APP), PasswordHasher
         )
+    )
+    container.bind(
+        bind_by_type(Dependent(build_redis, scope=DIScope.APP), Redis)
     )
     build_sa(container)
     build_gateways(container)
@@ -169,6 +179,12 @@ def build_tg(container: Container):
         bind_by_type(
             Dependent(GameViewImpl, scope=DIScope.APP),
             GameView,
+        ),
+    )
+    container.bind(
+        bind_by_type(
+            Dependent(build_redis_storage, scope=DIScope.APP),
+            Storage,
         ),
     )
 

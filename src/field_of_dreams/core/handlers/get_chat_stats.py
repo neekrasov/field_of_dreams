@@ -30,7 +30,9 @@ class GetChatStatsHandler(Handler[GetChatStatsCommand, None]):
             chat_id = command.chat_id
             chat = await self._chat_gateway.get_chat_by_id(chat_id)
             if not chat:
-                await self._game_view.notify_empty_stats_chat_not_exists(chat_id)
+                await self._game_view.notify_empty_stats_chat_not_exists(
+                    chat_id
+                )
                 return
 
             stats = await self._stats_gateway.get_chat_stats(chat_id)

@@ -1,7 +1,33 @@
+import enum
 from typing import Protocol, Callable, List, Awaitable, Optional, Any, Type
 
 from .types import Update, Message, Chat, User, ChatMember
 from .timer import Timer
+
+
+class State:
+    def to_dict(self) -> dict:
+        raise NotADirectoryError
+
+    @property
+    def data(self) -> dict:
+        raise NotImplementedError
+
+    @property
+    def state(self) -> enum.Enum:
+        raise NotImplementedError
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        raise NotImplementedError
+
+
+class Storage(Protocol):
+    async def get_state(self, chat_id: int) -> Optional[State]:
+        raise NotImplementedError
+
+    async def set_state(self, chat_id: int, state: State):
+        raise NotImplementedError
 
 
 class Filter(Protocol):

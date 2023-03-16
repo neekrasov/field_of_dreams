@@ -1,8 +1,7 @@
-import traceback
 import logging
 from typing import List, Callable, Type, Dict, Awaitable
 
-from .protocols import Bot, Middleware, Filter
+from .protocols import Bot, Middleware, Filter, Storage
 from .types import Update
 
 logger = logging.getLogger()
@@ -13,8 +12,9 @@ class UpdateHandler:
         self,
         bot: Bot,
         filters: List[Filter],
-        middlewares: List[Middleware],
         handler: Callable[..., Awaitable],
+        middlewares: List[Middleware],
+        storage: Storage,
         exc_handlers: Dict[Type[Exception], Callable[..., Awaitable]],
     ):
         self._filters = filters
@@ -22,20 +22,22 @@ class UpdateHandler:
         self._middlewares = middlewares
         self._bot = bot
         self._exc_handlers = exc_handlers
+        self._storage = storage
 
     async def handle(self, update: Update):
         try:
             for middleware in self._middlewares:
-                update = await middleware(update, self._handler)
-            if update:
-                await self._handler(update, self._bot)
+                handler = await middleware(update, self._handler)
+                if handler:
+                    self._handler = handler
         except Exception as e:
-            exc_type = type(e)
-            exc_handler = self._exc_handlers.get(exc_type, None)
+            exc_handler = self._exc_handlers.get(type(e), None)
             if exc_handler:
-                await exc_handler(update=update, e=e, bot=self._bot)
+                await exc_handler(
+                    update=update, e=e, bot=self._bot, storage=self._storage
+                )
             else:
-                logger.info(traceback.format_exc())
+                logger.exception(e)
                 raise e
 
     @property

@@ -6,12 +6,7 @@ from datetime import timedelta
 from field_of_dreams.core.entities.chat import ChatID
 from field_of_dreams.core.entities.user import UserID
 from field_of_dreams.core.entities.player import Player
-from field_of_dreams.infrastructure.tgbot import (
-    filters,
-    types,
-    protocols,
-    states,
-)
+from field_of_dreams.infrastructure.tgbot import filters, types, protocols
 from field_of_dreams.core.common import ApplicationException, Mediator
 from field_of_dreams.core.handlers.create_game import CreateGameCommand
 from field_of_dreams.core.handlers.add_player import AddPlayerCommand
@@ -27,6 +22,10 @@ from field_of_dreams.core.handlers.get_current_player import (
 from field_of_dreams.core.handlers.check_user_queue import (
     CheckUserQueueCommand,
 )
+from field_of_dreams.presentation.tgbot.states import (
+    GameStatus,
+    GameState,
+)
 from field_of_dreams.config import Settings
 from services.timer import create_timer
 from keyboards import game as game_kb
@@ -39,10 +38,13 @@ async def create_game(
     bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
+    storage: protocols.Storage,
 ):
-    logger.info("Create game")
     chat_id = update.message.chat.id  # type: ignore
-    if bot.get_state(chat_id) not in (states.GameState.FINISHED, None):
+    logger.info("Create game in chat %s", chat_id)
+    state = await storage.get_state(chat_id)
+
+    if state and state.state not in (GameStatus.FINISHED, None):
         return
 
     await mediator.send(
@@ -68,7 +70,7 @@ async def create_game(
             ]
         },
     )
-    bot.set_state(chat_id, states.GameState.PREPARING)
+    await storage.set_state(chat_id, GameState(GameStatus.PREPARING))
     update.message.entities = None  # type: ignore
     await bot.handle_update(update)
 
@@ -77,25 +79,22 @@ async def finish(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
+    storage: protocols.Storage,
 ):
-    logger.info("Finish game")
     chat_id = update.message.chat.id  # type: ignore
+    logger.info("Finish game in chat %s", chat_id)
     user_id = update.message.from_user.id  # type: ignore
     username = update.message.from_user.username  # type: ignore
-    admins = await bot.get_chat_administrators(chat_id)
-    is_admin = False
-    for admin in admins:
-        if admin.user.id == user_id:
-            is_admin = True
-            break
 
+    admins = await bot.get_chat_administrators(chat_id)
+    is_admin = any(admin.user.id == user_id for admin in admins)
     await mediator.send(
         FinishGameCommand(ChatID(chat_id), UserID(user_id), is_admin)
     )
+    await storage.set_state(chat_id, GameState(GameStatus.FINISHED))
     timer = bot.get_timer(chat_id)
     if timer:
         timer.del_all()
-    bot.set_state(chat_id, states.GameState.FINISHED)
     await bot.send_message(
         chat_id, f"Игра завершена пользователем @{username}"
     )
@@ -106,15 +105,15 @@ async def wait_players(
     bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
+    storage: protocols.Storage,
 ):
-    logger.info("Wait players")
     chat_id = update.message.chat.id  # type: ignore
-    state = bot.get_state(chat_id)
-    if state == states.GameState.PREPARING:
-        bot.set_state(chat_id, states.GameState.PREPARED)
-    else:
+    logger.info("Wait players in chat %s", chat_id)
+    state = await storage.get_state(chat_id)
+    if state.state != GameStatus.PREPARING:  # type: ignore
         return
 
+    await storage.set_state(chat_id, GameState(GameStatus.PREPARED))
     timer = bot.get_or_create_timer(chat_id)
     task = timer.run(
         create_timer(
@@ -125,7 +124,7 @@ async def wait_players(
         )
     )
     await task
-    bot.set_state(chat_id, states.GameState.STARTED)
+    await storage.set_state(chat_id, GameState(GameStatus.STARTED))
     await bot.handle_update(update)
 
 
@@ -134,13 +133,12 @@ async def join_to_game(
     bot: protocols.Bot,
     mediator: Mediator,
 ):
-    logger.info("Join to game")
+    chat_id = update.callback_query.message.chat.id  # type: ignore
+    user_id = update.callback_query.from_user.id  # type: ignore
+    username = update.callback_query.from_user.username  # type: ignore
+    logger.info("User %s join to game in chat %s", user_id, chat_id)
     await mediator.send(
-        AddPlayerCommand(
-            ChatID(update.callback_query.message.chat.id),  # type: ignore
-            UserID(update.callback_query.from_user.id),  # type: ignore
-            update.callback_query.from_user.username,  # type: ignore
-        ),
+        AddPlayerCommand(ChatID(chat_id), UserID(user_id), username),
     )
     await bot.answer_callback_query(
         update.callback_query.id, "Вы присоединились к игре."  # type: ignore
@@ -152,10 +150,12 @@ async def start_game(
     bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
+    storage: protocols.Storage,
 ):
-    logger.info("Start game")
     chat_id = update.message.chat.id  # type: ignore
-    bot.set_state(chat_id, states.GameState.PLUG)
+    logger.info("Start game in chat %s", chat_id)
+
+    await storage.set_state(chat_id, GameState(GameStatus.PLUG))
     try:
         await mediator.send(StartGameCommand(ChatID(chat_id)))
         await bot.send_message(
@@ -172,10 +172,10 @@ async def start_game(
             partial(asyncio.sleep, delay=settings.bot.question_read_time)
         )
         await task
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
         await bot.handle_update(update)
     except ApplicationException as e:
-        bot.set_state(chat_id, states.GameState.FINISHED)
+        await storage.set_state(chat_id, GameState(GameStatus.FINISHED))
         raise e
 
 
@@ -184,14 +184,15 @@ async def player_choice(
     bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
+    storage: protocols.Storage,
 ):
-    logger.info("Player choice")
     if update.message:
         chat_id = update.message.chat.id  # type: ignore
     else:
         chat_id = update.callback_query.message.chat.id  # type: ignore
 
-    bot.set_state(chat_id, states.GameState.PLUG)
+    logger.info("Player choice in chat %s", chat_id)
+    await storage.set_state(chat_id, GameState(GameStatus.PLUG))
 
     current_player: Player = await mediator.send(
         GetCurrentPlayerCommand(ChatID(chat_id))
@@ -233,12 +234,12 @@ async def player_choice(
             ),
         )
     )
-    bot.set_state(chat_id, states.GameState.WAIT_PLAYER_CHOICE)
+    await storage.set_state(chat_id, GameState(GameStatus.WAIT_PLAYER_CHOICE))
     await task
     if not task.cancelled():
         await bot.delete_message(chat_id, message.message_id)
         await mediator.send(IdleTurnCommand(ChatID(chat_id)))
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
         await bot.handle_update(update)
 
 
@@ -246,13 +247,14 @@ async def skip_turn(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
+    storage: protocols.Storage,
 ):
-    logger.info("Skip Turn")
     user_id = update.callback_query.from_user.id  # type: ignore
     chat_id = update.callback_query.message.chat.id  # type: ignore
     message_id = update.callback_query.message.message_id  # type: ignore
     callback_id = update.callback_query.id  # type: ignore
 
+    logger.info("User %s skipped turn in chat %s", user_id, chat_id)
     timer = bot.get_timer(chat_id)
     if timer and timer.all_done():
         await bot.answer_callback_query(
@@ -277,7 +279,7 @@ async def skip_turn(
         chat_id,
         f"@{current_player.username} решил пропустить ход. 🚶‍♂️",
     )
-    bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+    await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
     await bot.handle_update(update)
 
 
@@ -286,14 +288,15 @@ async def player_turn(
     bot: protocols.Bot,
     mediator: Mediator,
     settings: Settings,
+    storage: protocols.Storage,
 ):
-    logger.info("Turning letter")
     chat_id = update.callback_query.message.chat.id  # type: ignore
     user_id = update.callback_query.from_user.id  # type: ignore
     message_id = update.callback_query.message.message_id  # type: ignore
     username = update.callback_query.from_user.username  # type: ignore
     call_id = update.callback_query.id  # type: ignore
 
+    logger.info("The user %s has chosen a letter in chat %s", user_id, chat_id)
     timer = bot.get_timer(chat_id)
     if timer and timer.all_done():
         await bot.answer_callback_query(call_id, "🕑 Время выбора закончилось")
@@ -327,17 +330,17 @@ async def player_turn(
         )
     )
     if update.callback_query.data == "letter":  # type: ignore
-        state = states.GameState.PLAYER_LETTER_TURN
+        state = GameState(GameStatus.PLAYER_LETTER_TURN)
     else:
-        state = states.GameState.PLAYER_WORD_TURN
+        state = GameState(GameStatus.PLAYER_WORD_TURN)
 
-    state.value.set_data({"user_id": user_id})
-    bot.set_state(chat_id, state)
+    state.data = {"user_id": user_id}
+    await storage.set_state(chat_id, state)
 
     await task
     if not task.cancelled():
         await mediator.send(IdleTurnCommand(ChatID(chat_id)))
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
         await bot.handle_update(update)
 
 
@@ -345,13 +348,15 @@ async def player_word_turn(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
+    storage: protocols.Storage,
 ):
     chat_id = update.message.chat.id  # type: ignore
     user_id = update.message.from_user.id  # type: ignore
 
-    state = bot.get_state(chat_id)
-    user_id_from_state = state.value.data.get("user_id")
+    logger.info("The user %s has chosen a word in chat %s", user_id, chat_id)
+    state = await storage.get_state(chat_id)
     timer = bot.get_timer(chat_id)
+    user_id_from_state = state.data.get("user_id")  # type: ignore
     if user_id_from_state != user_id or (timer and timer.all_done()):
         return
     if timer:
@@ -359,11 +364,11 @@ async def player_word_turn(
     text = update.message.text.lower().strip()  # type: ignore
     if len(text) == 0:
         await mediator.send(IdleTurnCommand(ChatID(chat_id)))
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
         await bot.handle_update(update)
 
     await mediator.send(WordTurnCommand(ChatID(chat_id), text))
-    bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+    await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
     await bot.handle_update(update)
 
 
@@ -371,13 +376,15 @@ async def player_letter_turn(
     update: types.Update,
     bot: protocols.Bot,
     mediator: Mediator,
+    storage: protocols.Storage,
 ):
     chat_id = update.message.chat.id  # type: ignore
     user_id = update.message.from_user.id  # type: ignore
-    state = bot.get_state(chat_id)
-    user_id_from_state = state.value.data.get("user_id")
+    state = await storage.get_state(chat_id)
+    if not state:
+        return
     timer = bot.get_timer(chat_id)
-    if user_id_from_state != user_id or (timer and timer.all_done()):
+    if state.data.get("user_id") != user_id or (timer and timer.all_done()):
         return
 
     is_last: bool = await mediator.send(
@@ -407,12 +414,12 @@ async def player_letter_turn(
 
     if err:
         await mediator.send(IdleTurnCommand(ChatID(chat_id)))
-        bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+        await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
         await bot.handle_update(update)
         return
 
     await mediator.send(LetterTurnCommand(ChatID(chat_id), text))
-    bot.set_state(chat_id, states.GameState.PLAYER_CHOICE)
+    await storage.set_state(chat_id, GameState(GameStatus.PLAYER_CHOICE))
     await bot.handle_update(update)
 
 
@@ -428,29 +435,30 @@ def setup_handlers(bot: protocols.Bot):
         join_to_game,
         [
             filters.CallbackQueryFilter("join"),
-            filters.StateFilter(states.GameState.PREPARED),
+            filters.StateFilter(GameStatus.PREPARED),
         ],
     )
     bot.add_handler(
         player_turn,
         [
+            filters.StateFilter(GameStatus.WAIT_PLAYER_CHOICE),
             filters.OrCombinedFilter(
                 filters.CallbackQueryFilter("letter"),
                 filters.CallbackQueryFilter("word"),
             ),
-            filters.StateFilter(states.GameState.WAIT_PLAYER_CHOICE),
         ],
     )
     bot.add_handler(
         skip_turn,
         [
             filters.CallbackQueryFilter("skip"),
-            filters.StateFilter(states.GameState.WAIT_PLAYER_CHOICE),
+            filters.StateFilter(GameStatus.WAIT_PLAYER_CHOICE),
         ],
     )
     bot.add_handler(
         create_game,
         [
+            filters.MessageFilter(),
             filters.GroupFilter(),
             filters.CommandFilter("/game"),
         ],
@@ -460,7 +468,7 @@ def setup_handlers(bot: protocols.Bot):
         [
             filters.MessageFilter(),
             filters.GroupFilter(),
-            filters.StateFilter(states.GameState.PREPARING),
+            filters.StateFilter(GameStatus.PREPARING),
         ],
     )
     bot.add_handler(
@@ -468,13 +476,13 @@ def setup_handlers(bot: protocols.Bot):
         [
             filters.MessageFilter(),
             filters.GroupFilter(),
-            filters.StateFilter(states.GameState.STARTED),
+            filters.StateFilter(GameStatus.STARTED),
         ],
     )
     bot.add_handler(
         player_choice,
         [
-            filters.StateFilter(states.GameState.PLAYER_CHOICE),
+            filters.StateFilter(GameStatus.PLAYER_CHOICE),
         ],
     )
     bot.add_handler(
@@ -482,7 +490,7 @@ def setup_handlers(bot: protocols.Bot):
         [
             filters.MessageFilter(),
             filters.GroupFilter(),
-            filters.StateFilter(states.GameState.PLAYER_LETTER_TURN),
+            filters.StateFilter(GameStatus.PLAYER_LETTER_TURN),
         ],
     )
     bot.add_handler(
@@ -490,6 +498,6 @@ def setup_handlers(bot: protocols.Bot):
         [
             filters.MessageFilter(),
             filters.GroupFilter(),
-            filters.StateFilter(states.GameState.PLAYER_WORD_TURN),
+            filters.StateFilter(GameStatus.PLAYER_WORD_TURN),
         ],
     )

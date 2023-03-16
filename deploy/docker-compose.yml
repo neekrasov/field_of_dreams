@@ -74,6 +74,12 @@ services:
       - .env
     command: ["make", "run-amqp"]
     restart: on-failure
+
+  redis:
+    container_name: fod_redis
+    image: redis:7
+    expose:
+      - 6379
   
 volumes:
   fod_db_data:

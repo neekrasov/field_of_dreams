@@ -91,7 +91,7 @@ class RabbitMQSettings:
             username=self.username,
             password=self.password,
             host=self.host,
-            port=self.port
+            port=self.port,
         )
 
 
@@ -114,10 +114,26 @@ class APISettings:
 
 
 @dataclass(slots=True)
+class RedisSettings:
+    host: str = field(init=False)
+    port: int = field(init=False)
+    chat_prefix: str = field(init=False)
+
+    def __post_init__(self):
+        self._read_env()
+
+    def _read_env(self):
+        self.host = os.getenv("REDIS_HOST")
+        self.port = os.getenv("REDIS_PORT")
+        self.chat_prefix = os.getenv("REDIS_CHAT_PREFIX")
+
+
+@dataclass(slots=True)
 class Settings:
     postgres: PGSettings = field(init=False, default_factory=PGSettings)
     bot: BotSettings = field(init=False, default_factory=BotSettings)
     api: APISettings = field(init=False, default_factory=APISettings)
+    redis: RedisSettings = field(init=False, default_factory=RedisSettings)
     rabbit: RabbitMQSettings = field(
         init=False, default_factory=RabbitMQSettings
     )

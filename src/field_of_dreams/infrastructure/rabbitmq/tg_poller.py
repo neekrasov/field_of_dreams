@@ -28,25 +28,25 @@ class RabbitMQPoller(Poller):
 
     async def start_polling(self):
         connection = await aio_pika.connect_robust(self._rabbitmq_url)
-        channel = await connection.channel()
-        queue = await channel.declare_queue(self._rabbitmq_queue, durable=True)
-
-        self._is_polling = True
-        while self._is_polling:
-            try:
-                async with queue.iterator() as queue_iter:
-                    async for message in queue_iter:
+        async with connection.channel() as channel:
+            queue = await channel.declare_queue(
+                self._rabbitmq_queue, durable=True
+            )
+            async with queue.iterator() as queue_iter:
+                async for message in queue_iter:
+                    try:
                         async with message.process():
                             asyncio.create_task(
                                 self._bot.handle_update(
                                     Update(**json.loads(message.body))
                                 )
                             )
-            except Exception as e:
-                logger.error(f"Error while polling for updates: {e}")
-                await asyncio.sleep(5)
-
-        await connection.close()
+                    except asyncio.TimeoutError:
+                        message.nack(requeue=True)
+                    except Exception as e:
+                        logger.exception(f"Error while processing update: {e}")
+                        message.reject(requeue=False)
 
     async def stop(self):
-        self._is_polling = False
+        if self._connection:
+            await self._connection.close()

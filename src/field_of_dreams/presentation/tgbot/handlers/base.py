@@ -1,10 +1,19 @@
+import logging
+
 from field_of_dreams.core.common import Mediator
 from field_of_dreams.core.entities.chat import ChatID
 from field_of_dreams.core.handlers.join_chat import JoinToChatCommand
-from field_of_dreams.infrastructure.tgbot import filters, types, bot
+from field_of_dreams.infrastructure.tgbot import filters, types, bot, protocols
+
+logger = logging.getLogger()
 
 
-async def start(update: types.Update, bot: bot.Bot, mediator: Mediator):
+async def start(
+    update: types.Update,
+    bot: bot.Bot,
+    mediator: Mediator,
+    storage: protocols.Storage,
+):
     chat_id = update.message.chat.id  # type: ignore
     title = update.message.chat.title  # type: ignore
 

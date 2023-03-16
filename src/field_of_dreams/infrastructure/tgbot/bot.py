@@ -3,9 +3,8 @@ import json
 import logging
 from typing import List, Callable, Type, Optional, Dict, Awaitable
 
-from .protocols import Bot, Middleware, Filter
+from .protocols import Bot, Middleware, Filter, Storage
 from .handler import UpdateHandler
-from .states import GameState
 from .types import Update, User, Message, Chat, ChatMember
 from .timer import Timer
 
@@ -16,17 +15,18 @@ class TelegramBot(Bot):
     def __init__(
         self,
         session: aiohttp.ClientSession,
+        storage: Storage,
         token: str,
     ):
         self._token = token
         self._url = f"https://api.telegram.org/bot{self._token}/"
         self._session = session
+        self._storage = storage
         self._handlers: List[UpdateHandler] = []
         self._middlewares: List[Middleware] = []
         self._exc_handlers: Dict[
             Type[Exception], Callable[..., Awaitable]
         ] = {}
-        self._states: Dict[int, GameState] = {}
         self._timers: Dict[int, Timer] = {}
 
     def add_handler(self, handler: Callable, filters: List[Filter]):
@@ -37,6 +37,7 @@ class TelegramBot(Bot):
                 middlewares=self._middlewares,
                 exc_handlers=self._exc_handlers,
                 handler=handler,
+                storage=self._storage,
             )
         )
         return handler
@@ -44,32 +45,31 @@ class TelegramBot(Bot):
     def add_middleware(self, middleware: Middleware):
         self._middlewares.append(middleware)
 
-    def set_state(self, chat_id: int, state: GameState):
-        self._states[chat_id] = state
-
-    def get_state(self, chat_id: int) -> Optional[GameState]:
-        return self._states.get(chat_id)
-
-    def get_timer(self, chat_id: int) -> Optional[Timer]:
-        return self._timers.get(chat_id)
-
     def get_or_create_timer(self, chat_id: int) -> Timer:
         timer = self.get_timer(chat_id)
         if not timer:
             return self.create_timer(chat_id)
         return timer
 
+    def get_timer(self, chat_id: int) -> Optional[Timer]:
+        return self._timers.get(chat_id)
+
     def create_timer(self, chat_id: int) -> Timer:
         timer = Timer()
         self._timers[chat_id] = timer
         return timer
 
-    def _set_state_in_update(self, update: Update):
+    async def set_update_state(self, update: Update):
         if callback := update.callback_query:
-            if message := callback.message:
-                update.set_state(self._states.get(message.chat.id))
+            message = callback.message
         elif message := update.message:
-            update.set_state(self._states.get(message.chat.id))
+            message = message
+
+        if not message:
+            return
+        cur_state = await self._storage.get_state(message.chat.id)
+        if cur_state:
+            update.set_state(cur_state.state)
 
     def add_exception_hander(
         self,
@@ -79,7 +79,8 @@ class TelegramBot(Bot):
         self._exc_handlers[exception_type] = handler
 
     async def handle_update(self, update: Update):
-        self._set_state_in_update(update)
+        await self.set_update_state(update)
+        logger.info("Current state: %s", update.state)
         for handler in self._handlers:
             if all(filter.filter(update) for filter in handler.filters):
                 await handler.handle(update)

@@ -20,7 +20,7 @@ services:
       dockerfile: deploy/Dockerfile
     command: ["make", "migrate-up"]
     env_file:
-      - .env
+      - dev.env
     depends_on:
       - db
 
@@ -50,7 +50,7 @@ services:
     depends_on:
       - amqp
     env_file:
-      - .env
+      - dev.env
     command: ["make", "run-bot"]
     restart: on-failure
   
@@ -64,7 +64,7 @@ services:
     depends_on:
       - migrations
     env_file:
-      - .env
+      - dev.env
     command: ["make", "run-api"]
     restart: on-failure
   
@@ -79,9 +79,15 @@ services:
       migrations:
         condition: service_started
     env_file:
-      - .env
+      - dev.env
     command: ["make", "run-amqp"]
     restart: on-failure
+  
+  redis:
+    container_name: fod_redis
+    image: redis:7
+    expose:
+      - 6379
   
 volumes:
   fod_db_data:

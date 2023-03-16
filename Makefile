@@ -3,9 +3,13 @@ PRESENTATION:=src/field_of_dreams/presentation/
 DOCKER_COMPOSE:=deploy/docker-compose.yml
 DOCKER_ENV := deploy/.env
 
-ifeq ($(ENV), dev)
+ifneq ($(ENV),)
 	DOCKER_COMPOSE:=deploy/dev.docker-compose.yml
 	DOCKER_ENV:=deploy/dev.env
+	ifneq ($(wildcard .env),)
+		include .env
+		export
+	endif
 endif
 
  .PHONY: run-amqp
@@ -58,7 +62,7 @@ compose-logs:
 
  .PHONY: compose-exec
 compose-exec:
-	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} exec backend bash
+	docker-compose -f $(DOCKER_COMPOSE) --env-file ${DOCKER_ENV} exec ${container} bash
 
  .PHONY: compose-down
 compose-down:

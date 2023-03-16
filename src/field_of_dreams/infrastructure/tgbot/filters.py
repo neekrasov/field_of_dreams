@@ -1,5 +1,6 @@
+import enum
+
 from .protocols import Filter
-from .states import GameState
 from .types import Update
 
 
@@ -48,13 +49,13 @@ class CallbackQueryFilter(Filter):
 
 
 class StateFilter(Filter):
-    def __init__(self, state: GameState) -> None:
+    def __init__(self, state: enum.Enum) -> None:
         self._state = state
 
     def filter(self, update: Update):
         return (
             update.state is not None
-            and update.state.value.filter_ == self._state.value.filter_
+            and update.state.value == self._state.value
         )
 
 

@@ -4,13 +4,13 @@ import typing
 from field_of_dreams.config import Settings
 from .poller import BasePollerImpl
 from .bot import TelegramBot
-from .protocols import Poller, Bot
+from .protocols import Poller, Bot, Storage
 
 
 def build_telegram_bot(
-    settings: Settings, session: aiohttp.ClientSession
+    settings: Settings, session: aiohttp.ClientSession, storage: Storage
 ) -> Bot:
-    bot = TelegramBot(session, settings.bot.token)
+    bot = TelegramBot(session, storage, settings.bot.token)
     return bot
 
 
