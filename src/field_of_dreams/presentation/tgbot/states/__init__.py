@@ -1,1 +1,1 @@
-from .storage import GameState, GameStatus, RedisStorage # noqa
+from .storage import GameState, GameStatus, RedisStorage  # noqa

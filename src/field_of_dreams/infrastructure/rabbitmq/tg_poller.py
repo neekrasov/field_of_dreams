@@ -12,18 +12,10 @@ logger = logging.getLogger()
 
 
 class RabbitMQPoller(Poller):
-    def __init__(
-        self,
-        bot: Bot,
-        rabbitmq_url: str,
-        rabbitmq_queue: str,
-        timeout: int = 30,
-    ):
+    def __init__(self, bot: Bot, rabbitmq_url: str, rabbitmq_queue: str):
         self._bot = bot
         self._rabbitmq_url = rabbitmq_url
         self._rabbitmq_queue = rabbitmq_queue
-        self._timeout = timeout
-        self._is_polling = False
         self._connection: typing.Optional[AbstractRobustConnection] = None
 
     async def start_polling(self):
@@ -36,17 +28,23 @@ class RabbitMQPoller(Poller):
                 async for message in queue_iter:
                     try:
                         async with message.process():
-                            asyncio.create_task(
+                            task = asyncio.create_task(
                                 self._bot.handle_update(
                                     Update(**json.loads(message.body))
                                 )
                             )
+                            task.add_done_callback(self.handle_task)
                     except asyncio.TimeoutError:
                         message.nack(requeue=True)
                     except Exception as e:
                         logger.exception(f"Error while processing update: {e}")
                         message.reject(requeue=False)
 
+    def handle_task(self, future: asyncio.Future):
+        if exc := future.exception():
+            logger.exception("Exception in task %s", exc)
+
     async def stop(self):
         if self._connection:
             await self._connection.close()
+        logger.info("Poller stopped")

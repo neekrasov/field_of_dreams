@@ -26,7 +26,9 @@ class CommandFilter(Filter):
         self._command = command
 
     def filter(self, update: Update):
-        if (entities := update.message.entities) is not None:  # type: ignore # noqa
+        if not update.message:
+            return False
+        if (entities := update.message.entities) is not None:
             if entities[-1].type == "bot_command":
                 offset = entities[-1].offset
                 length = entities[-1].length

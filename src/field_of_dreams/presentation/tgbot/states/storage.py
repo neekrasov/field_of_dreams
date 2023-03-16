@@ -37,10 +37,7 @@ class GameState(State):
         return self._state
 
     def to_dict(self) -> dict:
-        return {
-            "state": self._state.value,
-            "data": self._data
-        }
+        return {"state": self._state.value, "data": self._data}
 
     @classmethod
     def from_dict(cls, data: dict):
