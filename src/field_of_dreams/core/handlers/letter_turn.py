@@ -76,7 +76,8 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 is_last = word.is_last_letter(current_game.guessed_letters)
                 score_per_turn = make_score(self._score_from, self._score_to)
                 showed_pos_count = word.count_letter(letter)
-                player.add_score(score_per_turn * score_per_turn)
+                result_score_turn = score_per_turn*showed_pos_count
+                player.add_score(result_score_turn)
                 current_game.add_guessed_letter(letter)
                 if is_last:
                     stats = await self._stats_gateway.get_user_stats(
@@ -97,7 +98,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                         letter,
                         player.username,
                         showed_pos_count,
-                        score_per_turn,
+                        result_score_turn,
                         player.score,
                     )
                 else:
@@ -106,7 +107,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                         letter,
                         showed_pos_count,
                         player.username,
-                        score_per_turn,
+                        result_score_turn,
                     )
                     await self._game_view.update_word_mask(
                         chat_id,
