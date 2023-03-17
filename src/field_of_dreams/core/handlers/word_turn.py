@@ -13,7 +13,7 @@ from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
 from ..protocols.gateways.user_stats import UserStatsGateway
 from ..protocols.views.game import GameView
-from ..services.score import generate_random_score
+from ..services.score import make_score
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
             word = current_game.word.word.strip().lower()
 
             if word == user_word:
-                score_per_turn = generate_random_score(
+                score_per_turn = make_score(
                     self._score_from, self._score_to
                 )
                 player.add_score(score_per_turn)

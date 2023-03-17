@@ -80,6 +80,7 @@ class TelegramBot(Bot):
 
     async def handle_update(self, update: Update):
         await self.set_update_state(update)
+        logger.info("Current state, %s", update.state)
         for handler in self._handlers:
             if all(filter.filter(update) for filter in handler.filters):
                 await handler.handle(update)

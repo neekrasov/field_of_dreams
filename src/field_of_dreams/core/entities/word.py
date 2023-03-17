@@ -23,7 +23,7 @@ class Word:
     def count_letter(self, letter: str) -> int:
         return self.word.count(letter)
 
-    def is_last_letter_remaining(self, shown_letters: List[str]):
+    def is_last_letter(self, shown_letters: List[str]):
         remaining_chars = set(self.word) - set(shown_letters)
         return len(remaining_chars) == 1
 

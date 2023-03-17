@@ -13,7 +13,7 @@ from ..protocols.gateways.game import GameGateway
 from ..protocols.gateways.player import PlayerGateway
 from ..protocols.gateways.user_stats import UserStatsGateway
 from ..protocols.views.game import GameView
-from ..services.score import generate_random_score
+from ..services.score import make_score
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 )
 
             word = current_game.word
-
+            guessed_right = False
             if letter in string.punctuation:
                 await self._game_view.notify_dont_support_punctuation(
                     chat_id, player.username
@@ -72,13 +72,11 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                     chat_id, letter, player.username
                 )
             elif word.check_guess(letter):
-                is_last = word.is_last_letter_remaining(
-                    current_game.guessed_letters
-                )
-                score_per_turn = generate_random_score(
-                    self._score_from, self._score_to
-                )
-                player.add_score(score_per_turn)
+                guessed_right = True
+                is_last = word.is_last_letter(current_game.guessed_letters)
+                score_per_turn = make_score(self._score_from, self._score_to)
+                showed_pos_count = word.count_letter(letter)
+                player.add_score(score_per_turn * score_per_turn)
                 current_game.add_guessed_letter(letter)
                 if is_last:
                     stats = await self._stats_gateway.get_user_stats(
@@ -98,7 +96,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                         chat_id,
                         letter,
                         player.username,
-                        word.count_letter(letter),
+                        showed_pos_count,
                         score_per_turn,
                         player.score,
                     )
@@ -106,7 +104,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                     await self._game_view.notify_correct_letter(
                         chat_id,
                         letter,
-                        word.count_letter(letter),
+                        showed_pos_count,
                         player.username,
                         score_per_turn,
                     )
@@ -121,7 +119,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 )
 
             player.state = PlayerState.WAITING
-            if not current_game.is_finished():
+            if not current_game.is_finished() and not guessed_right:
                 next_player = await self._player_gateway.get_next_player(
                     player, current_game.id  # type: ignore
                 )
