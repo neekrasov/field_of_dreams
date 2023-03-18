@@ -34,4 +34,6 @@ class Player(Base, PlayerEntity):
     joined_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
 
     user: Mapped["User"] = relationship()
-    __table_args__ = (UniqueConstraint("game_id", "user_id"),)
+    __table_args__ = (
+        UniqueConstraint("game_id", "user_id", name="player_uc"),
+    )

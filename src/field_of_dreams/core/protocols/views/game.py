@@ -93,3 +93,13 @@ class GameView(Protocol):
         self, chat_id: ChatID, username: str
     ) -> None:
         raise NotImplementedError
+
+    async def notify_user_stats_not_found(
+        self, chat_id: ChatID, username: str
+    ) -> None:
+        raise NotImplementedError
+
+    async def show_user_stats(
+        self, chat_id: ChatID, username: str, stats: UserStats
+    ) -> None:
+        raise NotImplementedError

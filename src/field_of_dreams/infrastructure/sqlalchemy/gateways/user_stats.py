@@ -36,6 +36,7 @@ class UserStatsGatewayImpl(SqlalchemyGateway, UserStatsGateway):
                     or_(
                         UserStatsModel.wins != 0,
                         UserStatsModel.total_score != 0,
+                        UserStatsModel.count_games != 0,
                     ),
                 )
             )

@@ -9,6 +9,7 @@ class UserStats:
     chat_id: ChatID
     user_id: UserID
     total_score: int
+    count_games: int
     wins: int
 
     user: User

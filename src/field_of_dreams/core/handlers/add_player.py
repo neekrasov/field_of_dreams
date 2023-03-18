@@ -45,6 +45,9 @@ class AddPlayerHandler(Handler[AddPlayerCommand, None]):
         except GatewayError:
             pass
 
+        user_stats = await self._stats_gateway.get_user_stats(chat_id, user_id)
+        user_stats.count_games += 1
+
         game = await self._game_gateway.get_current_game(chat_id)
         if not game:
             raise ApplicationException(

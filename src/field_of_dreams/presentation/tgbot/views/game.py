@@ -75,7 +75,7 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"🎯 @{username} угадал букву '{letter}'!\n"
+                f"🎯 @{username} угадал(а) букву '{letter}'!\n"
                 f"🫰 Начислено баллов за ход: {score_per_turn}.\n"
                 f"👀 Количество открытых позиций: {count}."
             ),
@@ -112,7 +112,7 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"🥳 @{username} угадал последнюю букву '{letter}'!\n"
+                f"🥳 @{username} угадал(а) последнюю букву '{letter}'!\n"
                 f"🫰 Начислено баллов за ход: {score_per_turn}.\n"
                 f"👀 Буква встречалась {count} раз.\n"
                 f"📈 Всего набрано баллов за игру: {total_score}."
@@ -130,7 +130,7 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"🥳 @{username} угадал слово '{word}'!\n"
+                f"🥳 @{username} угадал(а) слово '{word}'!\n"
                 f"🫰 Начислено баллов за ход: {score_per_turn}.\n"
                 f"📈 Всего набрано баллов за игру: {total_score}."
             ),
@@ -169,7 +169,8 @@ class GameViewImpl(GameView):
             [
                 (
                     f"\n{index+1}. {stat.user.name} "
-                    f"побед: {stat.wins} очков: {stat.total_score}"
+                    f"побед: {stat.wins} очков: {stat.total_score} "
+                    f"игр: {stat.count_games}"
                 )
                 for index, stat in enumerate(stats)
             ]
@@ -183,8 +184,8 @@ class GameViewImpl(GameView):
             chat_id,
             text=(
                 "Статистики пока что нет🫤"
-                "Для начала познакомьтесь со мной - /start"
-                "И начите игру - /game"
+                "\nДля начала познакомьтесь со мной - /start"
+                "\nИ начите игру - /game"
             ),
         )
 
@@ -202,5 +203,29 @@ class GameViewImpl(GameView):
             chat_id,
             text=(
                 f"@{username} слова не могут состоять из знаков пунктуации 🙄"
+            ),
+        )
+
+    async def notify_user_stats_not_found(
+        self, chat_id: ChatID, username: str
+    ) -> None:
+        await self._bot.send_message(
+            chat_id,
+            text=(
+                f"{username}, пока что у тебя нет статистики 🙃\nЧтобы она"
+                " появилась тебе нужно присоединится к 1 игре."
+            ),
+        )
+
+    async def show_user_stats(
+        self, chat_id: ChatID, username: str, stats: UserStats
+    ) -> None:
+        await self._bot.send_message(
+            chat_id,
+            text=(
+                f"😋Статистика по пользователю - {username}"
+                f"\n🎯Побед: {stats.wins}"
+                f"\n🫰Очков: {stats.total_score}"
+                f"\n⚔Игр: {stats.count_games}"
             ),
         )

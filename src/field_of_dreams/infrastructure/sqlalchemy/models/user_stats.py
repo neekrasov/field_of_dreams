@@ -17,6 +17,7 @@ class UserStats(Base, UserStats):
     )
     total_score: Mapped[int] = mapped_column(default=0)
     wins: Mapped[int] = mapped_column(default=0)
+    count_games: Mapped[int] = mapped_column(default=0, nullable=True)
 
     user: Mapped[User] = relationship()
 

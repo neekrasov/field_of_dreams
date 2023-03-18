@@ -18,7 +18,7 @@ async def create_admin(
         handler = await container.execute(
             handler=CreateAdminHandler,
             state=request_state,
-            scope=DIScope.REQUEST
+            scope=DIScope.REQUEST,
         )
         try:
             await handler.execute(CreateAdminCommand(email, raw_password))

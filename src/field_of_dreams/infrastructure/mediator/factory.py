@@ -70,6 +70,10 @@ from field_of_dreams.core.handlers.get_admin_by_email import (
     GetAdminByEmailCommand,
     GetAdminByEmailHandler,
 )
+from field_of_dreams.core.handlers.get_user_stats import (
+    GetUserStatsCommand,
+    GetUserStatsHandler,
+)
 from field_of_dreams.core.handlers.crud_word import (
     CreateWordCommand,
     UpdateWordCommand,
@@ -174,4 +178,8 @@ def build_mediator(
     mediator.bind(CreateWordCommand, CreateWordHandler(word_gateway, uow))
     mediator.bind(UpdateWordCommand, UpdateWordHandler(word_gateway, uow))
     mediator.bind(DeleteWordCommand, DeleteWordHandler(word_gateway, uow))
+    mediator.bind(
+        GetUserStatsCommand,
+        GetUserStatsHandler(stats_gateway, game_view, uow),
+    )
     return mediator
