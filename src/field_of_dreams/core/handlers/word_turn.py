@@ -60,9 +60,7 @@ class WordTurnHandler(Handler[WordTurnCommand, None]):
             word = current_game.word.word.strip().lower()
 
             if word == user_word:
-                score_per_turn = make_score(
-                    self._score_from, self._score_to
-                )
+                score_per_turn = make_score(self._score_from, self._score_to)
                 player.add_score(score_per_turn)
                 current_game.finish()
 

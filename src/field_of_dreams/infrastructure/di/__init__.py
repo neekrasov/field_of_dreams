@@ -1,1 +1,1 @@
-from .container import build_container, DIScope  # noqa
+from .container import build_container, DIScope, DIContainer  # noqa

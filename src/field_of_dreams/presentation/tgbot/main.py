@@ -1,7 +1,5 @@
 import asyncio
 import logging.config
-from di.dependent import Dependent
-from di.executors import AsyncExecutor
 from aiohttp.client import ClientResponseError
 
 from field_of_dreams.config import Settings
@@ -14,7 +12,6 @@ from field_of_dreams.infrastructure.di.container import (
     DIScope,
     build_container,
     build_telegram_bot,
-    # build_poller,
 )
 from field_of_dreams.infrastructure.rabbitmq.factory import build_rabbit_poller
 from middlewares import DIMiddleware
@@ -25,22 +22,16 @@ logger = logging.getLogger()
 
 async def serve():
     container = build_container()
-    di_scopes = [DIScope.APP, DIScope.REQUEST]
-    bot_solved = container.solve(
-        Dependent(build_telegram_bot, scope=DIScope.APP),
-        scopes=di_scopes,
-    )
-    poller_solved = container.solve(
-        Dependent(build_rabbit_poller, scope=DIScope.APP),
-        scopes=di_scopes,
-    )
-    executor = AsyncExecutor()
+    di_scopes = (DIScope.APP, DIScope.REQUEST)
     async with container.enter_scope(DIScope.APP) as di_state:
-        bot = await bot_solved.execute_async(executor, di_state)
-        poller = await poller_solved.execute_async(executor, di_state)
+        bot = await container.execute(
+            build_telegram_bot, di_state, DIScope.APP, di_scopes
+        )
+        poller = await container.execute(
+            build_rabbit_poller, di_state, DIScope.APP, di_scopes
+        )
 
         bot.add_middleware(DIMiddleware(container, di_state, bot))
-
         bot.add_exception_hander(GameOver, exc.game_over_exception_handler)
         bot.add_exception_hander(
             ApplicationException, exc.application_exception_handler

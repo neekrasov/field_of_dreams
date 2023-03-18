@@ -76,7 +76,7 @@ class LetterTurnHandler(Handler[LetterTurnCommand, None]):
                 is_last = word.is_last_letter(current_game.guessed_letters)
                 score_per_turn = make_score(self._score_from, self._score_to)
                 showed_pos_count = word.count_letter(letter)
-                result_score_turn = score_per_turn*showed_pos_count
+                result_score_turn = score_per_turn * showed_pos_count
                 player.add_score(result_score_turn)
                 current_game.add_guessed_letter(letter)
                 if is_last:

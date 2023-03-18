@@ -6,14 +6,10 @@ from aiohttp.web_response import StreamResponse
 from aiohttp.web_middlewares import middleware
 from aiohttp.web_exceptions import HTTPClientError, HTTPUnprocessableEntity
 from aiohttp.web import Application, Request, HTTPUnauthorized
-from di import Container, ScopeState
-from di.executors import AsyncExecutor
-from di.dependent import Dependent
+from di import ScopeState
 
-from field_of_dreams.core.common import (
-    InvalidCredentials,
-    NotFoundError,
-)
+from field_of_dreams.core.common import InvalidCredentials, NotFoundError
+from field_of_dreams.infrastructure.di.container import DIContainer
 from field_of_dreams.core.entities.admin import Admin
 from field_of_dreams.infrastructure.di.container import DIScope
 from .types import Controller
@@ -83,31 +79,31 @@ async def admin_auth(request: Request, handler: Controller):
     return await handler(request)
 
 
-def create_di_middleware(container: Container, app_state: ScopeState):
+def create_di_middleware(
+    container: DIContainer,
+    app_state: ScopeState,
+):
     @middleware
     async def e(
         request: Request, handler: Controller
     ) -> Awaitable[StreamResponse]:
-        solved = container.solve(
-            Dependent(handler, scope=DIScope.REQUEST),
-            scopes=[DIScope.APP, DIScope.REQUEST],
-        )
         async with container.enter_scope(
             DIScope.REQUEST, app_state
         ) as request_state:
-            return await solved.execute_async(
-                executor=AsyncExecutor(),
+            return await container.execute(
+                handler=handler,
                 state=request_state,
-                values={
-                    Request: request,
-                },
+                scope=DIScope.REQUEST,
+                values={Request: request},
             )
 
     return e
 
 
 def setup_middlewares(
-    app: Application, container: Container, app_state: ScopeState
+    app: Application,
+    container: DIContainer,
+    app_state: ScopeState,
 ):
     app.middlewares.append(validation_middleware)
     app.middlewares.append(error_handling_middleware)
