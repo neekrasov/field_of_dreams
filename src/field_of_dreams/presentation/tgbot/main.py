@@ -3,17 +3,10 @@ import logging.config
 from aiohttp.client import ClientResponseError
 
 from field_of_dreams.config import Settings
-from field_of_dreams.core.common.exception import (
-    ApplicationException,
-    GameOver,
-    QueueAccessError,
-)
-from field_of_dreams.infrastructure.di.container import (
-    DIScope,
-    build_container,
-    build_telegram_bot,
-)
+from field_of_dreams.core.common import exception as core_exc
+from field_of_dreams.infrastructure.di import DIScope, build_container
 from field_of_dreams.infrastructure.rabbitmq.factory import build_rabbit_poller
+from field_of_dreams.infrastructure.tgbot.factory import build_telegram_bot
 from middlewares import DIMiddleware
 from handlers import game, base, exc, stats
 
@@ -32,12 +25,14 @@ async def serve():
         )
 
         bot.add_middleware(DIMiddleware(container, di_state, bot))
-        bot.add_exception_hander(GameOver, exc.game_over_exception_handler)
         bot.add_exception_hander(
-            ApplicationException, exc.application_exception_handler
+            core_exc.GameOver, exc.game_over_exception_handler
         )
         bot.add_exception_hander(
-            QueueAccessError, exc.queue_access_exception_handler
+            core_exc.ApplicationException, exc.application_exception_handler
+        )
+        bot.add_exception_hander(
+            core_exc.QueueAccessError, exc.queue_access_exception_handler
         )
         bot.add_exception_hander(
             ClientResponseError, exc.too_many_requests_handler

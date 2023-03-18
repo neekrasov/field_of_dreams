@@ -1,1 +1,2 @@
-from .container import build_container, DIScope, DIContainer  # noqa
+from .container import DIScope, DIContainer  # noqa
+from .factory import build_container  # noqa

@@ -88,7 +88,11 @@ services:
     image: redis:7
     expose:
       - 6379
+    volumes:
+    - fod_redis_data:/var/lib/redis/data
+    restart: on-failure
   
 volumes:
   fod_db_data:
   fod_rabbitmq_data:
+  fod_redis_data:

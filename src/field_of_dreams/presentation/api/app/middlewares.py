@@ -8,10 +8,9 @@ from aiohttp.web_exceptions import HTTPClientError, HTTPUnprocessableEntity
 from aiohttp.web import Application, Request, HTTPUnauthorized
 from di import ScopeState
 
-from field_of_dreams.core.common import InvalidCredentials, NotFoundError
-from field_of_dreams.infrastructure.di.container import DIContainer
 from field_of_dreams.core.entities.admin import Admin
-from field_of_dreams.infrastructure.di.container import DIScope
+from field_of_dreams.core.common import InvalidCredentials, NotFoundError
+from field_of_dreams.infrastructure.di import DIContainer, DIScope
 from .types import Controller
 from .responses import error_json_response
 
