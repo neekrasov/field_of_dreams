@@ -223,7 +223,7 @@ class GameViewImpl(GameView):
         await self._bot.send_message(
             chat_id,
             text=(
-                f"😋Статистика по пользователю - {username}"
+                f"Статистика по пользователю - {username}"
                 f"\n🎯Побед: {stats.wins}"
                 f"\n🫰Очков: {stats.total_score}"
                 f"\n⚔Игр: {stats.count_games}"

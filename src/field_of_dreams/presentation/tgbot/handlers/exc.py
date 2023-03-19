@@ -8,6 +8,7 @@ from field_of_dreams.core.common.exception import (
     ApplicationException,
     GameOver,
     QueueAccessError,
+    ThrottlingException,
 )
 
 logger = logging.getLogger()
@@ -80,3 +81,9 @@ async def too_many_requests_handler(
     timer = bot.get_timer(chat_id)  # type: ignore
     if timer:
         timer.del_all()
+
+
+async def throttling_exc_handler(
+    update: types.Update, e: ThrottlingException, **kwargs
+):
+    logger.warning(e.message)

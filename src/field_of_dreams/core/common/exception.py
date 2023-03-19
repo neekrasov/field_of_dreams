@@ -29,3 +29,7 @@ class InvalidCredentials(ApplicationException):
 
 class NotFoundError(ApplicationException):
     """Raises when something is not found"""
+
+
+class ThrottlingException(ApplicationException):
+    """Raises when too maany requests"""

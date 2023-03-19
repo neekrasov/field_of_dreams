@@ -16,6 +16,9 @@ from field_of_dreams.core.handlers.word_turn import WordTurnCommand
 from field_of_dreams.core.handlers.finish_game import FinishGameCommand
 from field_of_dreams.core.handlers.check_is_last import CheckLastPlayerCommand
 from field_of_dreams.core.handlers.idle_turn import IdleTurnCommand
+from field_of_dreams.presentation.tgbot.middlewares.throttling import (
+    throttling,
+)
 from field_of_dreams.core.handlers.get_current_player import (
     GetCurrentPlayerCommand,
 )
@@ -33,6 +36,7 @@ from keyboards import game as game_kb
 logger = logging.getLogger()
 
 
+@throttling()
 async def create_game(
     update: types.Update,
     bot: protocols.Bot,
@@ -75,6 +79,7 @@ async def create_game(
     await bot.handle_update(update)
 
 
+@throttling()
 async def finish(
     update: types.Update,
     bot: protocols.Bot,

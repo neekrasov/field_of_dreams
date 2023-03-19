@@ -5,6 +5,7 @@ from .exception import (  # noqa
     GameOver,
     InvalidCredentials,
     NotFoundError,
+    ThrottlingException,
 )
 from .handler import Handler  # noqa
 from .uow import UnitOfWork  # noqa

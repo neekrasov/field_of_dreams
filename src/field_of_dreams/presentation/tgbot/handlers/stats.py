@@ -7,9 +7,14 @@ from field_of_dreams.core.entities.user import UserID
 from field_of_dreams.core.handlers.get_chat_stats import GetChatStatsCommand
 from field_of_dreams.core.handlers.get_user_stats import GetUserStatsCommand
 
+from field_of_dreams.presentation.tgbot.middlewares.throttling import (
+    throttling,
+)
+
 logger = logging.getLogger()
 
 
+@throttling()
 async def show_chat_stats(
     update: types.Update,
     bot: protocols.Bot,
@@ -18,6 +23,7 @@ async def show_chat_stats(
     await mediator.send(GetChatStatsCommand(ChatID(update.message.chat.id)))  # type: ignore # noqa
 
 
+@throttling()
 async def show_user_stats(
     update: types.Update,
     bot: protocols.Bot,
