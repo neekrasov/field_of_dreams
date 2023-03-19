@@ -40,7 +40,7 @@ class ThrottlingMiddleware(Middleware):
             return
 
         if hasattr(handler, "throttle"):
-            key = (user_id, chat_id)
+            key = (user_id, chat_id, handler.__name__)
             show_exc = False
             if key not in self._cache:
                 self._cache[key] = {
