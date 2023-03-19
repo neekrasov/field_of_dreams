@@ -36,7 +36,6 @@ from keyboards import game as game_kb
 logger = logging.getLogger()
 
 
-@throttling()
 async def create_game(
     update: types.Update,
     bot: protocols.Bot,
